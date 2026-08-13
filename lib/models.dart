@@ -3,10 +3,14 @@
 class Ingredient {
   final String name;
   final String qty;
-  final int price; // грн
+  final int price; // грн (акційна/поточна)
   final String dept;
   final String store; // "Сільпо"
-  const Ingredient(this.name, this.qty, this.price, this.dept, {this.store = 'Сільпо'});
+  final int? oldPrice; // звичайна ціна (до акції/уцінки); null = без знижки
+  const Ingredient(this.name, this.qty, this.price, this.dept, {this.store = 'Сільпо', this.oldPrice});
+
+  bool get onSale => oldPrice != null && oldPrice! > price;
+  int get saved => onSale ? oldPrice! - price : 0;
 }
 
 class Meal {
@@ -72,9 +76,9 @@ class DayMenu {
 final List<DayMenu> mockWeek = [
   DayMenu('Понеділок', const [
     Meal(type: 'Сніданок', title: 'Вівсяна каша з бананом та медом', equipment: 'Плита', minutes: 15, kcal: 380, price: 55, img: 'oatmeal,porridge', kcalPer100: 95, ingredients: [
-      Ingredient('Вівсяні пластівці «Премія»', '400 г', 32, 'Бакалія'),
+      Ingredient('Вівсяні пластівці «Премія»', '400 г', 32, 'Бакалія', oldPrice: 39),
       Ingredient('Банан', '2 шт', 18, 'Овочі та фрукти'),
-      Ingredient('Мед квітковий', '250 г', 89, 'Бакалія'),
+      Ingredient('Мед квітковий', '250 г', 89, 'Бакалія', oldPrice: 109),
     ], steps: [
       'Закип\'яти 400 мл води або молока в каструлі.',
       'Всип 80 г вівсяних пластівців, вари на малому вогні 5–7 хв, помішуючи.',
@@ -82,26 +86,26 @@ final List<DayMenu> mockWeek = [
       'Зніми з вогню, полий медом і подавай теплою.',
     ]),
     Meal(type: 'Обід', title: 'Курячий бульйон з гречаною локшиною', equipment: 'Духовка', minutes: 30, kcal: 520, price: 82, img: 'chicken,soup', ingredients: [
-      Ingredient('Куряче філе', '1 кг', 149, 'М\'ясо та птиця'),
-      Ingredient('Гречана локшина', '400 г', 44, 'Бакалія'),
-      Ingredient('Морква рання', '1 кг', 20, 'Овочі та фрукти'),
+      Ingredient('Куряче філе', '1 кг', 149, 'М\'ясо та птиця', oldPrice: 175),
+      Ingredient('Гречана локшина', '400 г', 44, 'Бакалія', oldPrice: 52),
+      Ingredient('Морква рання', '1 кг', 20, 'Овочі та фрукти', oldPrice: 26),
     ]),
     Meal(type: 'Вечеря', title: 'Запечене куряче філе з картоплею', equipment: 'Духовка', minutes: 35, kcal: 610, price: 79, img: 'roast,chicken,potato', ingredients: [
       Ingredient('Картопля рання', '1 кг', 15, 'Овочі та фрукти'),
-      Ingredient('Куряче філе', '0.5 кг', 75, 'М\'ясо та птиця'),
+      Ingredient('Куряче філе', '0.5 кг', 75, 'М\'ясо та птиця', oldPrice: 89),
     ]),
   ]),
   DayMenu('Вівторок', const [
     Meal(type: 'Сніданок', title: 'Омлет із сиром та хлібом', equipment: 'Плита', minutes: 12, kcal: 420, price: 48, img: 'omelette,eggs', ingredients: [
       Ingredient('Яйця C0 10 шт', '1 уп', 78, 'Молочні продукти'),
-      Ingredient('Сир твердий Пирятин', '200 г', 83, 'Молочні продукти'),
+      Ingredient('Сир твердий Пирятин', '200 г', 83, 'Молочні продукти', oldPrice: 99),
     ]),
     Meal(type: 'Обід', title: 'Плов з куркою та рисом', equipment: 'Мультиварка', minutes: 45, kcal: 640, price: 96, img: 'pilaf,rice', ingredients: [
-      Ingredient('Рис «Премія»', '900 г', 44, 'Бакалія'),
+      Ingredient('Рис «Премія»', '900 г', 44, 'Бакалія', oldPrice: 54),
       Ingredient('Куряче філе', '0.6 кг', 90, 'М\'ясо та птиця'),
     ]),
     Meal(type: 'Вечеря', title: 'Салат із запеченою рибою', equipment: 'Духовка', minutes: 25, kcal: 480, price: 120, img: 'salmon,salad', ingredients: [
-      Ingredient('Сьомга філе', '300 г', 199, 'Риба'),
+      Ingredient('Сьомга філе', '300 г', 199, 'Риба', oldPrice: 235),
       Ingredient('Огірки', '300 г', 22, 'Овочі та фрукти'),
     ]),
   ]),
