@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
+import '../data/stores.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -10,6 +11,9 @@ class CartScreen extends StatelessWidget {
     final byDept = shoppingListByDept();
     final total = byDept.values.expand((e) => e).fold<int>(0, (s, i) => s + i.price);
     final count = byDept.values.fold<int>(0, (s, e) => s + e.length);
+    // Активний магазин обирається на вкладці «Профіль» (мультиринкова основа).
+    final store = StoreRegistry.instance.active.info;
+    final canOrder = store.canOrder;
 
     return CustomScrollView(slivers: [
       SliverAppBar(pinned: true, backgroundColor: AppColors.bg,
@@ -32,11 +36,15 @@ class CartScreen extends StatelessWidget {
               child: const Text('Зекономлено ≈ 214 ₴ на акціях', style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.w600))),
             const SizedBox(height: 14),
             SizedBox(width: double.infinity, child: FilledButton.icon(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Оформлення в Сільпо — checkout-лінк підключимо через MCP'), duration: Duration(seconds: 2))),
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(canOrder
+                  ? 'Оформлення в ${store.name} — checkout-лінк підключимо через MCP'
+                  : 'Список готовий. Замовлення для «${store.name}» — скоро'),
+                duration: const Duration(seconds: 2))),
               style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk, padding: const EdgeInsets.symmetric(vertical: 14)),
-              icon: const Icon(Icons.local_shipping_outlined),
-              label: const Text('Оформити в Сільпо', style: TextStyle(fontWeight: FontWeight.w700)),
+              icon: Icon(canOrder ? Icons.local_shipping_outlined : Icons.list_alt),
+              label: Text(canOrder ? 'Оформити в ${store.name}' : 'Згенерувати список',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
             )),
           ]),
         ),

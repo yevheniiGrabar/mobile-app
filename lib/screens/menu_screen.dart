@@ -92,7 +92,7 @@ class _DishImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        width: 88, height: 88,
+        width: 104, height: 104,
         child: Image.network(
           meal.imageUrl,
           fit: BoxFit.cover,

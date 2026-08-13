@@ -3,8 +3,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
 import '../models.dart';
 
-/// Дашборд-шапка у стилі преміальних food-апів:
-/// недельна стрічка + кільце калорій + бари Б/Ж/В.
+/// Дашборд-шапка (стиль Stitch, світло-зелена):
+/// стрічка тижня → БЮДЖЕТ (головне) → калорії + Б/Ж/В.
 class DashboardHeader extends StatelessWidget {
   const DashboardHeader({super.key});
 
@@ -13,10 +13,12 @@ class DashboardHeader extends StatelessWidget {
     final today = mockWeek.isNotEmpty ? mockWeek[0] : null;
     final eaten = today?.kcal ?? 0;
     const goal = 2000;
-    // Макроси поки мокові (Б/Ж/В у грамах) — підключимо з меню/агента.
-    const protein = (val: 95, goal: 120, color: Color(0xFF6FA8FF));
+    final spent = mockWeek.fold<int>(0, (s, d) => s + d.total); // витрачено за тиждень
+    const limit = 2000; // тижневий бюджет (демо)
+    // Макроси поки мокові — підключимо з меню/агента.
+    const protein = (val: 95, goal: 120, color: AppColors.blue);
     const fat = (val: 68, goal: 80, color: AppColors.amber);
-    const carbs = (val: 180, goal: 230, color: AppColors.green);
+    const carbs = (val: 180, goal: 230, color: AppColors.carbs);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -26,11 +28,13 @@ class DashboardHeader extends StatelessWidget {
         border: Border.all(color: AppColors.line),
         gradient: const RadialGradient(
           center: Alignment(-0.9, -1.0), radius: 1.4,
-          colors: [Color(0xFFEFE9FC), AppColors.surface],
+          colors: [AppColors.accentSoft, AppColors.surface],
         ),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const _WeekStrip(),
+        const SizedBox(height: 16),
+        _BudgetCard(spent: spent, limit: limit),
         const SizedBox(height: 16),
         Row(children: [
           _CalorieRing(eaten: eaten, goal: goal),
@@ -43,6 +47,62 @@ class DashboardHeader extends StatelessWidget {
             _MacroBar(label: 'Вуглеводи', val: carbs.val, goal: carbs.goal, color: carbs.color),
           ])),
         ]),
+      ]),
+    );
+  }
+}
+
+/// Головна картка — бюджет тижня (у дусі budget-first екрана Stitch).
+class _BudgetCard extends StatelessWidget {
+  final int spent;
+  final int limit;
+  const _BudgetCard({required this.spent, required this.limit});
+  @override
+  Widget build(BuildContext context) {
+    final pct = (spent / limit).clamp(0.0, 1.0);
+    final within = spent <= limit;
+    final left = (limit - spent);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Бюджет на тиждень', style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
+            const SizedBox(height: 2),
+            RichText(text: TextSpan(children: [
+              TextSpan(text: '$spent ', style: const TextStyle(color: AppColors.text, fontSize: 26, fontWeight: FontWeight.w900)),
+              TextSpan(text: '/ $limit ₴', style: const TextStyle(color: AppColors.muted, fontSize: 14, fontWeight: FontWeight.w600)),
+            ])),
+          ]),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: within ? AppColors.accentSoft : AppColors.warn.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(within ? Icons.check_circle : Icons.error_outline,
+                size: 14, color: within ? AppColors.accent : AppColors.warn),
+              const SizedBox(width: 4),
+              Text(within ? 'в межах' : 'перевищено',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: within ? AppColors.accent : AppColors.warn)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(value: pct, minHeight: 8,
+            backgroundColor: AppColors.surface2,
+            valueColor: AlwaysStoppedAnimation(within ? AppColors.accent : AppColors.warn)),
+        ),
+        const SizedBox(height: 6),
+        Text(within ? 'Залишок: $left ₴ · Зоряна тримає меню в бюджеті' : 'Скоротити на ${-left} ₴ — попроси Зоряну',
+          style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
       ]),
     );
   }
@@ -108,14 +168,14 @@ class _WeekStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
     const dates = [23, 24, 25, 26, 27, 28, 29];
-    const statuses = [AppColors.green, AppColors.green, AppColors.amber, AppColors.green, Color(0xFF6FA8FF), AppColors.green, AppColors.muted];
+    const statuses = [AppColors.accent, AppColors.accent, AppColors.amber, AppColors.accent, AppColors.blue, AppColors.accent, AppColors.muted];
     const todayIndex = 2;
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       for (int i = 0; i < days.length; i++)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           decoration: BoxDecoration(
-            color: i == todayIndex ? AppColors.surface2 : Colors.transparent,
+            color: i == todayIndex ? AppColors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: i == todayIndex ? Border.all(color: AppColors.line) : null,
           ),

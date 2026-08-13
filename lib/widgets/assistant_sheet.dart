@@ -42,8 +42,17 @@ class _AssistantSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Row(children: [
-              const CircleAvatar(radius: 18, backgroundColor: AppColors.accentSoft,
-                child: Icon(Icons.auto_awesome, color: AppColors.accent, size: 20)),
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const RadialGradient(
+                    center: Alignment(-0.3, -0.3), radius: 0.9,
+                    colors: [Color(0xFF4FD08A), AppColors.accent]),
+                  boxShadow: [BoxShadow(color: AppColors.accent.withValues(alpha: 0.35), blurRadius: 16, spreadRadius: 1)],
+                ),
+                child: const Icon(Icons.auto_awesome, color: Colors.white, size: 22),
+              ),
               const SizedBox(width: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
                 Text(assistantName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),

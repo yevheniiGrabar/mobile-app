@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../data/stores.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -25,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _storeSelector(),
           _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               const Text('Бюджет на тиждень', style: TextStyle(fontWeight: FontWeight.w700)),
@@ -60,6 +62,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ]),
       )),
     ]);
+  }
+
+  /// Селектор ринку + магазину (мультиринкова основа: Сільпо/Instacart/…).
+  Widget _storeSelector() {
+    final reg = StoreRegistry.instance;
+    final stores = reg.providersFor(reg.activeMarket).map((p) => p.info).toList();
+    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: const [
+        Icon(Icons.storefront_outlined, size: 18, color: AppColors.accent),
+        SizedBox(width: 8),
+        Text('Магазин та ринок', style: TextStyle(fontWeight: FontWeight.w700)),
+      ]),
+      const SizedBox(height: 4),
+      const Text('Замовляй у своєму магазині — Україна, США, Європа',
+        style: TextStyle(fontSize: 11.5, color: AppColors.muted)),
+      const SizedBox(height: 12),
+      // Ринки
+      Row(children: [
+        for (final m in Market.values) ...[
+          Expanded(child: GestureDetector(
+            onTap: () => setState(() {
+              reg.activeMarket = m;
+              final first = reg.providersFor(m).where((p) => p.info.enabled);
+              if (first.isNotEmpty) reg.activeStoreId = first.first.info.id;
+            }),
+            child: Container(
+              margin: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: reg.activeMarket == m ? AppColors.accent : AppColors.surface2,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: reg.activeMarket == m ? AppColors.accent : AppColors.line)),
+              child: Text(m.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
+                color: reg.activeMarket == m ? AppColors.accentInk : AppColors.text)),
+            ),
+          )),
+        ],
+      ]),
+      const SizedBox(height: 12),
+      // Магазини у вибраному ринку
+      Column(children: [
+        for (final s in stores) _storeRow(reg, s),
+      ]),
+    ]));
+  }
+
+  Widget _storeRow(StoreRegistry reg, StoreInfo s) {
+    final active = reg.activeStoreId == s.id;
+    return Opacity(
+      opacity: s.enabled ? 1 : 0.55,
+      child: GestureDetector(
+        onTap: s.enabled ? () => setState(() => reg.select(s.id)) : null,
+        child: Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: active ? AppColors.accentSoft : AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: active ? AppColors.accent : AppColors.line)),
+          child: Row(children: [
+            Text(s.emoji, style: const TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+              Text(s.note, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+            ])),
+            if (!s.enabled)
+              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: AppColors.surface2, borderRadius: BorderRadius.circular(8)),
+                child: const Text('Скоро', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.muted)))
+            else if (active)
+              const Icon(Icons.check_circle, color: AppColors.accent, size: 20)
+            else
+              const Icon(Icons.circle_outlined, color: AppColors.muted, size: 20),
+          ]),
+        ),
+      ),
+    );
   }
 
   Widget _card({required Widget child}) => Container(
