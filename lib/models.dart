@@ -19,6 +19,7 @@ class Meal {
   final String img; // ключове слово для фото страви
   final List<Ingredient> ingredients;
   final List<String> steps; // кроки приготування (для екрана рецепта)
+  final int kcalPer100;     // калорійність на 100 г (для розрахунку порції)
   const Meal({
     required this.type,
     required this.title,
@@ -29,12 +30,18 @@ class Meal {
     required this.img,
     this.ingredients = const [],
     this.steps = const [],
+    this.kcalPer100 = 120,
   });
 
-  /// БЖУ (грами) — поки евристика від калорій; підключимо з агента/MCP.
+  /// БЖУ (грами) на всю страву — поки евристика від калорій; підключимо з агента/MCP.
   int get protein => (kcal * 0.22 / 4).round();
   int get fat => (kcal * 0.30 / 9).round();
   int get carbs => (kcal * 0.48 / 4).round();
+
+  /// БЖУ (грами) на 100 г — для розрахунку порції у щоденнику.
+  double get proteinPer100 => kcalPer100 * 0.22 / 4;
+  double get fatPer100 => kcalPer100 * 0.30 / 9;
+  double get carbsPer100 => kcalPer100 * 0.48 / 4;
 
   /// Кроки: реальні, якщо задані, інакше — розумний фолбек.
   List<String> get cookSteps => steps.isNotEmpty
@@ -64,7 +71,7 @@ class DayMenu {
 /// Демо-меню на кілька днів.
 final List<DayMenu> mockWeek = [
   DayMenu('Понеділок', const [
-    Meal(type: 'Сніданок', title: 'Вівсяна каша з бананом та медом', equipment: 'Плита', minutes: 15, kcal: 380, price: 55, img: 'oatmeal,porridge', ingredients: [
+    Meal(type: 'Сніданок', title: 'Вівсяна каша з бананом та медом', equipment: 'Плита', minutes: 15, kcal: 380, price: 55, img: 'oatmeal,porridge', kcalPer100: 95, ingredients: [
       Ingredient('Вівсяні пластівці «Премія»', '400 г', 32, 'Бакалія'),
       Ingredient('Банан', '2 шт', 18, 'Овочі та фрукти'),
       Ingredient('Мед квітковий', '250 г', 89, 'Бакалія'),

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
 import '../models.dart';
+import '../data/diary.dart';
 import '../widgets/meal_card.dart';
 import 'subscription_screen.dart';
+import 'diary_screen.dart';
 
 /// Головна (Stitch): бюджет → КБЖУ → «Цей тиждень» → «Меню на сьогодні».
 class HomeScreen extends StatefulWidget {
@@ -18,18 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _todayIndex = 0; // сьогодні = Понеділок (демо-дані)
   int _selected = 0;
 
-  // Цілі КБЖУ (демо; підключимо з профілю)
-  static const _kcalGoal = 2000, _pGoal = 100, _fGoal = 60, _cGoal = 250;
-
   DayMenu? get _day => _selected < mockWeek.length ? mockWeek[_selected] : null;
 
   @override
   Widget build(BuildContext context) {
     final d = _day;
-    final eaten = d?.kcal ?? 0;
-    final protein = d?.meals.fold<int>(0, (s, m) => s + m.protein) ?? 0;
-    final fat = d?.meals.fold<int>(0, (s, m) => s + m.fat) ?? 0;
-    final carbs = d?.meals.fold<int>(0, (s, m) => s + m.carbs) ?? 0;
     final spent = mockWeek.fold<int>(0, (s, x) => s + x.total);
     final daysLeft = (_days.length - _todayIndex - 1).clamp(0, 7);
 
@@ -61,8 +56,21 @@ class _HomeScreenState extends State<HomeScreen> {
       )),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        child: _NutritionCard(kcal: eaten, kcalGoal: _kcalGoal,
-          protein: protein, pGoal: _pGoal, fat: fat, fGoal: _fGoal, carbs: carbs, cGoal: _cGoal),
+        child: AnimatedBuilder(
+          animation: DiaryStore.instance,
+          builder: (context, _) {
+            final ds = DiaryStore.instance;
+            return _NutritionCard(
+              kcal: ds.kcal, kcalGoal: DiaryStore.goalKcal,
+              protein: ds.protein, pGoal: DiaryStore.goalProtein,
+              fat: ds.fat, fGoal: DiaryStore.goalFat,
+              carbs: ds.carbs, cGoal: DiaryStore.goalCarbs,
+              entries: ds.today.length,
+              onDiary: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DiaryScreen())),
+            );
+          },
+        ),
       )),
       // Цей тиждень
       SliverToBoxAdapter(child: Padding(
@@ -152,16 +160,30 @@ class _BudgetCard extends StatelessWidget {
 }
 
 class _NutritionCard extends StatelessWidget {
-  final int kcal, kcalGoal, protein, pGoal, fat, fGoal, carbs, cGoal;
+  final int kcal, kcalGoal, protein, pGoal, fat, fGoal, carbs, cGoal, entries;
+  final VoidCallback onDiary;
   const _NutritionCard({required this.kcal, required this.kcalGoal, required this.protein,
-    required this.pGoal, required this.fat, required this.fGoal, required this.carbs, required this.cGoal});
+    required this.pGoal, required this.fat, required this.fGoal, required this.carbs, required this.cGoal,
+    required this.entries, required this.onDiary});
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.line)),
       child: Column(children: [
+        Row(children: [
+          const Text('Сьогодні зʼїдено', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700)),
+          const Spacer(),
+          InkWell(onTap: onDiary, borderRadius: BorderRadius.circular(8), child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            child: Row(children: [
+              Text('Щоденник ($entries)', style: const TextStyle(fontSize: 12.5, color: AppColors.accent, fontWeight: FontWeight.w700)),
+              const Icon(Icons.chevron_right, size: 18, color: AppColors.accent),
+            ]),
+          )),
+        ]),
+        const SizedBox(height: 8),
         SizedBox(width: 150, height: 150, child: Stack(alignment: Alignment.center, children: [
           PieChart(PieChartData(startDegreeOffset: -90, sectionsSpace: 0, centerSpaceRadius: 56, sections: [
             PieChartSectionData(value: kcal.toDouble(), color: AppColors.accent, radius: 13, showTitle: false),
