@@ -16,6 +16,7 @@ class Meal {
   final int minutes;
   final int kcal;
   final int price; // грн
+  final String img; // ключове слово для фото страви
   final List<Ingredient> ingredients;
   const Meal({
     required this.type,
@@ -24,8 +25,15 @@ class Meal {
     required this.minutes,
     required this.kcal,
     required this.price,
+    required this.img,
     this.ingredients = const [],
   });
+
+  /// URL красивого фото страви (стабільне на страву).
+  String get imageUrl {
+    final lock = title.hashCode.abs() % 100000;
+    return 'https://loremflickr.com/240/240/${Uri.encodeComponent(img)}?lock=$lock';
+  }
 }
 
 class DayMenu {
@@ -39,39 +47,39 @@ class DayMenu {
 /// Демо-меню на кілька днів.
 final List<DayMenu> mockWeek = [
   DayMenu('Понеділок', const [
-    Meal(type: 'Сніданок', title: 'Вівсяна каша з бананом та медом', equipment: 'Плита', minutes: 15, kcal: 380, price: 55, ingredients: [
+    Meal(type: 'Сніданок', title: 'Вівсяна каша з бананом та медом', equipment: 'Плита', minutes: 15, kcal: 380, price: 55, img: 'oatmeal,porridge', ingredients: [
       Ingredient('Вівсяні пластівці «Премія»', '400 г', 32, 'Бакалія'),
       Ingredient('Банан', '2 шт', 18, 'Овочі та фрукти'),
       Ingredient('Мед квітковий', '250 г', 89, 'Бакалія'),
     ]),
-    Meal(type: 'Обід', title: 'Курячий бульйон з гречаною локшиною', equipment: 'Духовка', minutes: 30, kcal: 520, price: 82, ingredients: [
+    Meal(type: 'Обід', title: 'Курячий бульйон з гречаною локшиною', equipment: 'Духовка', minutes: 30, kcal: 520, price: 82, img: 'chicken,soup', ingredients: [
       Ingredient('Куряче філе', '1 кг', 149, 'М\'ясо та птиця'),
       Ingredient('Гречана локшина', '400 г', 44, 'Бакалія'),
       Ingredient('Морква рання', '1 кг', 20, 'Овочі та фрукти'),
     ]),
-    Meal(type: 'Вечеря', title: 'Запечене куряче філе з картоплею', equipment: 'Духовка', minutes: 35, kcal: 610, price: 79, ingredients: [
+    Meal(type: 'Вечеря', title: 'Запечене куряче філе з картоплею', equipment: 'Духовка', minutes: 35, kcal: 610, price: 79, img: 'roast,chicken,potato', ingredients: [
       Ingredient('Картопля рання', '1 кг', 15, 'Овочі та фрукти'),
       Ingredient('Куряче філе', '0.5 кг', 75, 'М\'ясо та птиця'),
     ]),
   ]),
   DayMenu('Вівторок', const [
-    Meal(type: 'Сніданок', title: 'Омлет із сиром та хлібом', equipment: 'Плита', minutes: 12, kcal: 420, price: 48, ingredients: [
+    Meal(type: 'Сніданок', title: 'Омлет із сиром та хлібом', equipment: 'Плита', minutes: 12, kcal: 420, price: 48, img: 'omelette,eggs', ingredients: [
       Ingredient('Яйця C0 10 шт', '1 уп', 78, 'Молочні продукти'),
       Ingredient('Сир твердий Пирятин', '200 г', 83, 'Молочні продукти'),
     ]),
-    Meal(type: 'Обід', title: 'Плов з куркою та рисом', equipment: 'Мультиварка', minutes: 45, kcal: 640, price: 96, ingredients: [
+    Meal(type: 'Обід', title: 'Плов з куркою та рисом', equipment: 'Мультиварка', minutes: 45, kcal: 640, price: 96, img: 'pilaf,rice', ingredients: [
       Ingredient('Рис «Премія»', '900 г', 44, 'Бакалія'),
       Ingredient('Куряче філе', '0.6 кг', 90, 'М\'ясо та птиця'),
     ]),
-    Meal(type: 'Вечеря', title: 'Салат із запеченою рибою', equipment: 'Духовка', minutes: 25, kcal: 480, price: 120, ingredients: [
+    Meal(type: 'Вечеря', title: 'Салат із запеченою рибою', equipment: 'Духовка', minutes: 25, kcal: 480, price: 120, img: 'salmon,salad', ingredients: [
       Ingredient('Сьомга філе', '300 г', 199, 'Риба'),
       Ingredient('Огірки', '300 г', 22, 'Овочі та фрукти'),
     ]),
   ]),
   DayMenu('Середа', const [
-    Meal(type: 'Сніданок', title: 'Сирники зі сметаною', equipment: 'Плита', minutes: 20, kcal: 450, price: 62),
-    Meal(type: 'Обід', title: 'Суп з фрикадельками', equipment: 'Плита', minutes: 40, kcal: 500, price: 88),
-    Meal(type: 'Вечеря', title: 'Тушкована картопля з цибулею', equipment: 'Плита', minutes: 35, kcal: 430, price: 54),
+    Meal(type: 'Сніданок', title: 'Сирники зі сметаною', equipment: 'Плита', minutes: 20, kcal: 450, price: 62, img: 'cheese,pancakes'),
+    Meal(type: 'Обід', title: 'Суп з фрикадельками', equipment: 'Плита', minutes: 40, kcal: 500, price: 88, img: 'meatball,soup'),
+    Meal(type: 'Вечеря', title: 'Тушкована картопля з цибулею', equipment: 'Плита', minutes: 35, kcal: 430, price: 54, img: 'potato,stew'),
   ]),
 ];
 

@@ -34,13 +34,15 @@ class _MainShellState extends State<MainShell> {
         notchMargin: 8,
         height: 76,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _NavItem(icon: Icons.restaurant_menu, label: 'Меню', selected: index == 0, onTap: () => setState(() => index = 0)),
-            _NavItem(icon: Icons.shopping_cart_outlined, label: 'Кошик', selected: index == 1, onTap: () => setState(() => index = 1)),
-            const SizedBox(width: 48), // місце під FAB (Зоряна)
-            _NavItem(icon: Icons.tune, label: 'Профіль', selected: index == 2, onTap: () => setState(() => index = 2)),
-            const _NavItem(icon: Icons.auto_awesome, label: 'Зоряна', selected: false, onTap: null),
+            Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              _NavItem(icon: Icons.restaurant_menu, label: 'Меню', selected: index == 0, onTap: () => setState(() => index = 0)),
+              _NavItem(icon: Icons.shopping_cart_outlined, label: 'Кошик', selected: index == 1, onTap: () => setState(() => index = 1)),
+            ])),
+            const SizedBox(width: 56), // місце під центральну кнопку Зоряна (FAB)
+            Expanded(child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              _NavItem(icon: Icons.tune, label: 'Профіль', selected: index == 2, onTap: () => setState(() => index = 2)),
+            ])),
           ],
         ),
       ),

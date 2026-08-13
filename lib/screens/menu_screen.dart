@@ -47,34 +47,72 @@ class _MealCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _Pill(text: meal.type, color: AppColors.surface2, textColor: AppColors.muted),
-        const SizedBox(height: 8),
-        Text(meal.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Row(children: [
-          _MiniTag(icon: Icons.local_fire_department, text: '${meal.kcal} ккал', color: AppColors.amber),
-          const SizedBox(width: 10),
-          _MiniTag(icon: Icons.kitchen, text: meal.equipment, color: AppColors.green),
-          const SizedBox(width: 10),
-          _MiniTag(icon: Icons.timer_outlined, text: '${meal.minutes} хв', color: AppColors.muted),
-        ]),
-        const SizedBox(height: 12),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('${meal.price} ₴', style: const TextStyle(color: AppColors.green, fontSize: 18, fontWeight: FontWeight.w800)),
-          OutlinedButton.icon(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Заміна «${meal.title}» — підключимо через агента'), duration: const Duration(seconds: 2))),
-            style: OutlinedButton.styleFrom(foregroundColor: AppColors.accent, side: const BorderSide(color: AppColors.accent)),
-            icon: const Icon(Icons.swap_horiz, size: 18),
-            label: const Text('Замінити'),
-          ),
-        ]),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _DishImage(meal: meal),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _Pill(text: meal.type, color: AppColors.surface2, textColor: AppColors.muted),
+          const SizedBox(height: 6),
+          Text(meal.title, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 10, runSpacing: 4, children: [
+            _MiniTag(icon: Icons.local_fire_department, text: '${meal.kcal} ккал', color: AppColors.amber),
+            _MiniTag(icon: Icons.kitchen, text: meal.equipment, color: AppColors.green),
+            _MiniTag(icon: Icons.timer_outlined, text: '${meal.minutes} хв', color: AppColors.muted),
+          ]),
+          const SizedBox(height: 10),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('${meal.price} ₴', style: const TextStyle(color: AppColors.green, fontSize: 17, fontWeight: FontWeight.w800)),
+            OutlinedButton.icon(
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Заміна «${meal.title}» — підключимо через агента'), duration: const Duration(seconds: 2))),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.accent, side: const BorderSide(color: AppColors.accent),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), visualDensity: VisualDensity.compact),
+              icon: const Icon(Icons.swap_horiz, size: 16),
+              label: const Text('Замінити', style: TextStyle(fontSize: 12.5)),
+            ),
+          ]),
+        ])),
       ]),
     );
   }
+}
+
+/// Мініатюра страви з фолбеком, якщо фото не завантажилось.
+class _DishImage extends StatelessWidget {
+  final Meal meal;
+  const _DishImage({required this.meal});
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 88, height: 88,
+        child: Image.network(
+          meal.imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (c, child, progress) =>
+              progress == null ? child : _placeholder(shimmer: true),
+          errorBuilder: (c, e, s) => _placeholder(shimmer: false),
+        ),
+      ),
+    );
+  }
+
+  Widget _placeholder({required bool shimmer}) => Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [AppColors.surface2, AppColors.accentInk]),
+        ),
+        child: Center(
+          child: Icon(shimmer ? Icons.restaurant : Icons.ramen_dining,
+              color: AppColors.accent.withValues(alpha: 0.7), size: 30),
+        ),
+      );
 }
 
 class _MiniTag extends StatelessWidget {

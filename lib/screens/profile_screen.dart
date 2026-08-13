@@ -82,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: sel.contains(t) ? (warn ? AppColors.warn.withOpacity(0.18) : (ok ? AppColors.green.withOpacity(0.18) : AppColors.accent)) : AppColors.surface2,
+                color: sel.contains(t) ? (warn ? AppColors.warn.withValues(alpha: 0.18) : (ok ? AppColors.green.withValues(alpha: 0.18) : AppColors.accent)) : AppColors.surface2,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: sel.contains(t) ? (warn ? AppColors.warn : (ok ? AppColors.green : AppColors.accent)) : AppColors.line),
               ),
