@@ -1,179 +1,182 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
 import '../data/stores.dart';
+import 'menu_settings_screen.dart';
+import 'subscription_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
+/// Профіль (Stitch): акаунт + статистика тижня + групи налаштувань.
+/// «Налаштування меню» (бюджет/раціон/магазин) відкривається під-екраном.
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  double budget = 2000;
-  int people = 2;
-  final prefs = {'ПП', 'Білкове', 'Овочі', 'Бюджетно', 'Здивуй мене'};
-  final selectedPrefs = <String>{'ПП'};
-  final allergies = {'Горіхи', 'Лактоза', 'Глютен', 'Морепродукти', 'Яйця', 'Соя', 'Цитрусові'};
-  final selectedAllergies = <String>{};
-  final equipment = {'Плита', 'Духовка', 'Мікрохвильовка', 'Мультиварка', 'Аерогриль', 'Блендер'};
-  final selectedEquip = <String>{'Плита', 'Духовка'};
+  // Демо-статистика тижня (підключимо реальні дані пізніше).
+  static const _spend = [216, 264, 204, 230, 260, 240, 190]; // ₴/день
+  static const _dayLabels = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД'];
 
   @override
   Widget build(BuildContext context) {
+    final store = StoreRegistry.instance.active.info;
+    final totalSpend = _spend.fold<int>(0, (s, x) => s + x);
+    const totalKcal = 13720;
+
     return CustomScrollView(slivers: [
-      SliverAppBar(pinned: true, backgroundColor: AppColors.bg,
-        title: const Text('Налаштування меню', style: TextStyle(fontWeight: FontWeight.w800))),
+      SliverAppBar(pinned: true, backgroundColor: AppColors.bg, elevation: 0, titleSpacing: 16,
+        title: const Text('Профіль', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22))),
       SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _storeSelector(),
-          _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text('Бюджет на тиждень', style: TextStyle(fontWeight: FontWeight.w700)),
-              Text('${budget.round()} ₴', style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w800, fontSize: 16)),
-            ]),
-            Slider(value: budget, min: 800, max: 10000, divisions: 46, activeColor: AppColors.accent,
-              onChanged: (v) => setState(() => budget = v)),
-            const Text('800 (Економ) · 5 000 (Оптимальний) · 10 000 (Преміум)', style: TextStyle(fontSize: 11, color: AppColors.muted)),
-          ])),
-          _card(child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Кількість осіб', style: TextStyle(fontWeight: FontWeight.w700)),
-              Text('Розрахунок порцій', style: TextStyle(fontSize: 11.5, color: AppColors.muted)),
-            ]),
-            Row(children: [
-              _round(Icons.remove, () => setState(() { if (people > 1) people--; })),
-              Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: Text('$people', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
-              _round(Icons.add, () => setState(() => people++)),
-            ]),
-          ])),
-          _chips('Харчові вподобання', prefs, selectedPrefs),
-          _chips('Алергії та виключення', allergies, selectedAllergies, warn: true),
-          _chips('Кухонне обладнання', equipment, selectedEquip, ok: true),
-          const SizedBox(height: 8),
-          SizedBox(width: double.infinity, child: FilledButton.icon(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('✨ Генерація меню — підключимо агента + Silpo MCP'), duration: Duration(seconds: 2))),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk, padding: const EdgeInsets.symmetric(vertical: 15)),
-            icon: const Icon(Icons.auto_awesome),
-            label: const Text('Скласти меню на тиждень', style: TextStyle(fontWeight: FontWeight.w800)),
-          )),
-          const SizedBox(height: 90),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        child: Column(children: [
+          _accountCard(context),
+          const SizedBox(height: 12),
+          _statsCard(totalKcal, totalSpend),
+          const SizedBox(height: 20),
+          _group('НАЛАШТУВАННЯ', [
+            _row(context, Icons.track_changes, 'Цілі калорій', '1 900 ккал', () => _openSettings(context)),
+            _row(context, Icons.groups_outlined, 'Склад сім\'ї', '2 особи', () => _openSettings(context)),
+            _row(context, Icons.eco_outlined, 'Раціон і алергії', '2 фільтри', () => _openSettings(context)),
+          ]),
+          const SizedBox(height: 16),
+          _group('ЗАМОВЛЕННЯ', [
+            _row(context, Icons.storefront_outlined, 'Магазин та ринок', store.name, () => _openSettings(context)),
+            _row(context, Icons.location_on_outlined, 'Адреси доставки', '2', () => _soon(context)),
+            _row(context, Icons.credit_card, 'Спосіб оплати', 'Apple Pay', () => _soon(context)),
+            _row(context, Icons.history, 'Історія замовлень', '14', () => _soon(context)),
+          ]),
+          const SizedBox(height: 16),
+          _group('ІНШЕ', [
+            _row(context, Icons.workspace_premium, 'Mealize Pro', 'Спробувати', () =>
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SubscriptionScreen(), fullscreenDialog: true)), accent: true),
+            _row(context, Icons.notifications_none, 'Сповіщення', '', () => _soon(context)),
+            _row(context, Icons.help_outline, 'Підтримка', '', () => _soon(context)),
+          ]),
+          const SizedBox(height: 100),
         ]),
       )),
     ]);
   }
 
-  /// Селектор ринку + магазину (мультиринкова основа: Сільпо/Instacart/…).
-  Widget _storeSelector() {
-    final reg = StoreRegistry.instance;
-    final stores = reg.providersFor(reg.activeMarket).map((p) => p.info).toList();
-    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: const [
-        Icon(Icons.storefront_outlined, size: 18, color: AppColors.accent),
-        SizedBox(width: 8),
-        Text('Магазин та ринок', style: TextStyle(fontWeight: FontWeight.w700)),
+  void _openSettings(BuildContext c) =>
+      Navigator.of(c).push(MaterialPageRoute(builder: (_) => const MenuSettingsScreen()));
+  void _soon(BuildContext c) => ScaffoldMessenger.of(c).showSnackBar(
+      const SnackBar(content: Text('Розділ у розробці'), duration: Duration(seconds: 2)));
+
+  Widget _accountCard(BuildContext context) => GestureDetector(
+    onTap: () => _openSettings(context),
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
+      child: Row(children: [
+        Container(width: 52, height: 52,
+          decoration: BoxDecoration(shape: BoxShape.circle,
+            gradient: const RadialGradient(center: Alignment(-0.3, -0.3), radius: 0.9, colors: [Color(0xFF4FD08A), AppColors.accent])),
+          child: const Icon(Icons.person, color: Colors.white, size: 26)),
+        const SizedBox(width: 14),
+        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Євгеній Грабар', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          SizedBox(height: 2),
+          Text('Сім\'я — 2 особи', style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
+        ])),
+        const Icon(Icons.chevron_right, color: AppColors.muted),
       ]),
-      const SizedBox(height: 4),
-      const Text('Замовляй у своєму магазині — Україна, США, Європа',
-        style: TextStyle(fontSize: 11.5, color: AppColors.muted)),
+    ),
+  );
+
+  Widget _statsCard(int kcal, int spend) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('ТИЖДЕНЬ', style: TextStyle(fontSize: 11, letterSpacing: 1, color: AppColors.muted, fontWeight: FontWeight.w700)),
       const SizedBox(height: 12),
-      // Ринки
       Row(children: [
-        for (final m in Market.values) ...[
-          Expanded(child: GestureDetector(
-            onTap: () => setState(() {
-              reg.activeMarket = m;
-              final first = reg.providersFor(m).where((p) => p.info.enabled);
-              if (first.isNotEmpty) reg.activeStoreId = first.first.info.id;
-            }),
-            child: Container(
-              margin: const EdgeInsets.only(right: 6),
-              padding: const EdgeInsets.symmetric(vertical: 9),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: reg.activeMarket == m ? AppColors.accent : AppColors.surface2,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: reg.activeMarket == m ? AppColors.accent : AppColors.line)),
-              child: Text(m.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
-                color: reg.activeMarket == m ? AppColors.accentInk : AppColors.text)),
-            ),
-          )),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          RichText(text: TextSpan(children: [
+            TextSpan(text: _fmt(kcal), style: const TextStyle(color: AppColors.text, fontSize: 22, fontWeight: FontWeight.w900)),
+            const TextSpan(text: '  ккал', style: TextStyle(color: AppColors.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+          ])),
+          const SizedBox(height: 2),
+          const Text('разом', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+        ])),
+        Container(width: 1, height: 36, color: AppColors.line),
+        const SizedBox(width: 16),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text('$spend ₴', style: const TextStyle(color: AppColors.green, fontSize: 22, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 2),
+          const Text('витрати', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+        ]),
+      ]),
+      const SizedBox(height: 18),
+      SizedBox(height: 96, child: _chart()),
+    ]),
+  );
+
+  Widget _chart() {
+    final spots = [for (int i = 0; i < _spend.length; i++) FlSpot(i.toDouble(), _spend[i].toDouble())];
+    final maxY = (_spend.reduce((a, b) => a > b ? a : b) * 1.25);
+    return LineChart(LineChartData(
+      minY: 0, maxY: maxY,
+      gridData: const FlGridData(show: false),
+      borderData: FlBorderData(show: false),
+      titlesData: FlTitlesData(
+        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 22, interval: 1,
+          getTitlesWidget: (v, m) {
+            final i = v.toInt();
+            if (i < 0 || i >= _dayLabels.length) return const SizedBox.shrink();
+            return Padding(padding: const EdgeInsets.only(top: 6),
+              child: Text(_dayLabels[i], style: const TextStyle(fontSize: 10, color: AppColors.muted)));
+          })),
+      ),
+      lineTouchData: const LineTouchData(enabled: false),
+      lineBarsData: [LineChartBarData(
+        spots: spots, isCurved: true, curveSmoothness: 0.35,
+        color: AppColors.carbs, barWidth: 3, isStrokeCapRound: true,
+        dotData: FlDotData(show: true, getDotPainter: (s, p, b, i) =>
+          FlDotCirclePainter(radius: 3.5, color: AppColors.carbs, strokeWidth: 2, strokeColor: AppColors.surface)),
+        belowBarData: BarAreaData(show: true, color: AppColors.carbs.withValues(alpha: 0.10)),
+      )],
+    ));
+  }
+
+  Widget _group(String title, List<Widget> rows) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Padding(padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(title, style: const TextStyle(fontSize: 11, letterSpacing: 1, color: AppColors.muted, fontWeight: FontWeight.w700))),
+    Container(
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
+      child: Column(children: [
+        for (int i = 0; i < rows.length; i++) ...[
+          if (i > 0) const Divider(height: 1, thickness: 1, color: AppColors.line, indent: 52),
+          rows[i],
         ],
       ]),
-      const SizedBox(height: 12),
-      // Магазини у вибраному ринку
-      Column(children: [
-        for (final s in stores) _storeRow(reg, s),
-      ]),
-    ]));
-  }
+    ),
+  ]);
 
-  Widget _storeRow(StoreRegistry reg, StoreInfo s) {
-    final active = reg.activeStoreId == s.id;
-    return Opacity(
-      opacity: s.enabled ? 1 : 0.55,
-      child: GestureDetector(
-        onTap: s.enabled ? () => setState(() => reg.select(s.id)) : null,
-        child: Container(
-          margin: const EdgeInsets.only(top: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          decoration: BoxDecoration(
-            color: active ? AppColors.accentSoft : AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: active ? AppColors.accent : AppColors.line)),
-          child: Row(children: [
-            Text(s.emoji, style: const TextStyle(fontSize: 18)),
-            const SizedBox(width: 10),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(s.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-              Text(s.note, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-            ])),
-            if (!s.enabled)
-              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.surface2, borderRadius: BorderRadius.circular(8)),
-                child: const Text('Скоро', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.muted)))
-            else if (active)
-              const Icon(Icons.check_circle, color: AppColors.accent, size: 20)
-            else
-              const Icon(Icons.circle_outlined, color: AppColors.muted, size: 20),
-          ]),
-        ),
+  Widget _row(BuildContext context, IconData icon, String label, String value, VoidCallback onTap, {bool accent = false}) =>
+    InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(children: [
+          Icon(icon, size: 20, color: accent ? AppColors.accent : AppColors.text),
+          const SizedBox(width: 14),
+          Expanded(child: Text(label, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600,
+            color: accent ? AppColors.accent : AppColors.text))),
+          if (value.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 6),
+            child: Text(value, style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600))),
+          const Icon(Icons.chevron_right, color: AppColors.muted, size: 20),
+        ]),
       ),
     );
-  }
 
-  Widget _card({required Widget child}) => Container(
-    margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
-    child: child);
-
-  Widget _round(IconData i, VoidCallback f) => GestureDetector(onTap: f, child: Container(
-    width: 34, height: 34, decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(9)),
-    child: Icon(i, color: AppColors.accent, size: 20)));
-
-  Widget _chips(String title, Set<String> all, Set<String> sel, {bool warn = false, bool ok = false}) {
-    return _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      const SizedBox(height: 12),
-      Wrap(spacing: 8, runSpacing: 8, children: [
-        for (final t in all)
-          GestureDetector(
-            onTap: () => setState(() => sel.contains(t) ? sel.remove(t) : sel.add(t)),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: sel.contains(t) ? (warn ? AppColors.warn.withValues(alpha: 0.18) : (ok ? AppColors.green.withValues(alpha: 0.18) : AppColors.accent)) : AppColors.surface2,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: sel.contains(t) ? (warn ? AppColors.warn : (ok ? AppColors.green : AppColors.accent)) : AppColors.line),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (sel.contains(t) && ok) const Padding(padding: EdgeInsets.only(right: 4), child: Icon(Icons.check, size: 14, color: AppColors.green)),
-                Text(t, style: TextStyle(fontSize: 12.5, color: sel.contains(t) && !warn && !ok ? AppColors.accentInk : AppColors.text, fontWeight: FontWeight.w600)),
-              ]),
-            ),
-          ),
-      ]),
-    ]));
+  String _fmt(int n) {
+    final s = n.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write(' ');
+      buf.write(s[i]);
+    }
+    return buf.toString();
   }
 }
