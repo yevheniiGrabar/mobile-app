@@ -28,7 +28,7 @@ class CartScreen extends StatelessWidget {
             ]),
             const SizedBox(height: 8),
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: AppColors.accentInk, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(8)),
               child: const Text('Зекономлено ≈ 214 ₴ на акціях', style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.w600))),
             const SizedBox(height: 14),
             SizedBox(width: double.infinity, child: FilledButton.icon(

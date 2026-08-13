@@ -42,7 +42,7 @@ class _AssistantSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Row(children: [
-              const CircleAvatar(radius: 18, backgroundColor: AppColors.accentInk,
+              const CircleAvatar(radius: 18, backgroundColor: AppColors.accentSoft,
                 child: Icon(Icons.auto_awesome, color: AppColors.accent, size: 20)),
               const SizedBox(width: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [

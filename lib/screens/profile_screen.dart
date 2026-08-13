@@ -68,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     child: child);
 
   Widget _round(IconData i, VoidCallback f) => GestureDetector(onTap: f, child: Container(
-    width: 34, height: 34, decoration: BoxDecoration(color: AppColors.accentInk, borderRadius: BorderRadius.circular(9)),
+    width: 34, height: 34, decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(9)),
     child: Icon(i, color: AppColors.accent, size: 20)));
 
   Widget _chips(String title, Set<String> all, Set<String> sel, {bool warn = false, bool ok = false}) {

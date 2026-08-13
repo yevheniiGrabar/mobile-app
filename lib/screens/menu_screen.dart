@@ -108,7 +108,7 @@ class _DishImage extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [AppColors.surface2, AppColors.accentInk]),
+            colors: [AppColors.surface2, AppColors.accentSoft]),
         ),
         child: Center(
           child: Icon(shimmer ? Icons.restaurant : Icons.ramen_dining,

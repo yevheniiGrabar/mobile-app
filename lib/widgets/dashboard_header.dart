@@ -26,7 +26,7 @@ class DashboardHeader extends StatelessWidget {
         border: Border.all(color: AppColors.line),
         gradient: const RadialGradient(
           center: Alignment(-0.9, -1.0), radius: 1.4,
-          colors: [Color(0xFF241C3A), AppColors.surface],
+          colors: [Color(0xFFEFE9FC), AppColors.surface],
         ),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

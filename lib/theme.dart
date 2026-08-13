@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// Палітра «Розумний кошик» (тёмна тема, фіолетовий акцент — вайб прототипу).
+/// Палітра «Розумний кошик» — СВІТЛА тема (чисто, повітряно, у дусі Apple).
 class AppColors {
-  static const bg = Color(0xFF0E0E13);
-  static const surface = Color(0xFF1A1A22);
-  static const surface2 = Color(0xFF23232E);
-  static const accent = Color(0xFFB9A7F5); // фіолетовий
-  static const accentInk = Color(0xFF2A2140);
-  static const green = Color(0xFF7CE7A6); // ціни/економія
-  static const amber = Color(0xFFF4C24E); // бали
-  static const warn = Color(0xFFE07A6B);
-  static const text = Color(0xFFECECF2);
-  static const muted = Color(0xFF9A9AAB);
-  static const line = Color(0xFF2C2C38);
+  static const bg = Color(0xFFF6F5FA);       // фон (світлий з легким лавандовим)
+  static const surface = Color(0xFFFFFFFF);  // картки
+  static const surface2 = Color(0xFFEFEDF6); // чіпи/підкладки
+  static const accent = Color(0xFF7C5CE6);   // фіолетовий (насичений для світлого фону)
+  static const accentInk = Color(0xFFFFFFFF);// текст/іконка НА акценті
+  static const accentSoft = Color(0xFFECE6FB);// тонована підкладка (аватари/квадрати)
+  static const green = Color(0xFF12A150);    // ціни/економія
+  static const amber = Color(0xFFD9911A);    // калорії/бали
+  static const warn = Color(0xFFD6533F);
+  static const text = Color(0xFF1B1B24);     // основний текст
+  static const muted = Color(0xFF75758A);    // вторинний
+  static const line = Color(0xFFE7E5EF);     // розділювачі/бордери
 }
 
 ThemeData buildTheme() {
-  final base = ThemeData.dark(useMaterial3: true);
+  final base = ThemeData.light(useMaterial3: true);
   return base.copyWith(
     scaffoldBackgroundColor: AppColors.bg,
     colorScheme: base.colorScheme.copyWith(
