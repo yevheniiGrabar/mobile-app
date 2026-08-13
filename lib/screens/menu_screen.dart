@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
+import '../widgets/dashboard_header.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -17,6 +18,7 @@ class MenuScreen extends StatelessWidget {
             child: _Pill(text: '1 460 / 1 500 ₴', color: AppColors.accent))),
         ],
       ),
+      const SliverToBoxAdapter(child: DashboardHeader()),
       SliverList(delegate: SliverChildBuilderDelegate((c, i) {
         final day = mockWeek[i];
         return Padding(
