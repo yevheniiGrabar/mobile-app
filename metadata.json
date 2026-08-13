@@ -1,0 +1,6 @@
+{
+  "name": "Сільпо Меню & Бюджет",
+  "description": "Генерація рецептів на тиждень під ваш бюджет з цінами Сільпо, заміною інгредієнтів та списком покупок",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
