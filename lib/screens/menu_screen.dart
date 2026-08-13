@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../widgets/dashboard_header.dart';
+import '../widgets/swap_sheet.dart';
+import 'recipe_screen.dart';
+import 'subscription_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -13,9 +16,14 @@ class MenuScreen extends StatelessWidget {
         pinned: true,
         backgroundColor: AppColors.bg,
         title: const Text('Меню на тиждень', style: TextStyle(fontWeight: FontWeight.w800)),
-        actions: const [
-          Padding(padding: EdgeInsets.only(right: 16), child: Center(
-            child: _Pill(text: '1 460 / 1 500 ₴', color: AppColors.accent))),
+        actions: [
+          IconButton(
+            tooltip: 'Mealize Pro',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const SubscriptionScreen(), fullscreenDialog: true)),
+            icon: const Icon(Icons.workspace_premium, color: AppColors.accent),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       const SliverToBoxAdapter(child: DashboardHeader()),
@@ -47,7 +55,9 @@ class _MealCard extends StatelessWidget {
   const _MealCard({required this.meal});
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => RecipeScreen(meal: meal))),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
@@ -68,8 +78,7 @@ class _MealCard extends StatelessWidget {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('${meal.price} ₴', style: const TextStyle(color: AppColors.green, fontSize: 17, fontWeight: FontWeight.w800)),
             OutlinedButton.icon(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Заміна «${meal.title}» — підключимо через агента'), duration: const Duration(seconds: 2))),
+              onPressed: () => showSwapSheet(context, meal),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.accent, side: const BorderSide(color: AppColors.accent),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), visualDensity: VisualDensity.compact),
@@ -79,6 +88,7 @@ class _MealCard extends StatelessWidget {
           ]),
         ])),
       ]),
+      ),
     );
   }
 }

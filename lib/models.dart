@@ -18,6 +18,7 @@ class Meal {
   final int price; // грн
   final String img; // ключове слово для фото страви
   final List<Ingredient> ingredients;
+  final List<String> steps; // кроки приготування (для екрана рецепта)
   const Meal({
     required this.type,
     required this.title,
@@ -27,7 +28,23 @@ class Meal {
     required this.price,
     required this.img,
     this.ingredients = const [],
+    this.steps = const [],
   });
+
+  /// БЖУ (грами) — поки евристика від калорій; підключимо з агента/MCP.
+  int get protein => (kcal * 0.22 / 4).round();
+  int get fat => (kcal * 0.30 / 9).round();
+  int get carbs => (kcal * 0.48 / 4).round();
+
+  /// Кроки: реальні, якщо задані, інакше — розумний фолбек.
+  List<String> get cookSteps => steps.isNotEmpty
+      ? steps
+      : [
+          'Підготуй інгредієнти зі списку та розігрій ${equipment.toLowerCase()}.',
+          'Обсмаж/провари основу страви ~${(minutes * 0.4).round()} хв.',
+          'Додай решту інгредієнтів і готуй ще ~${(minutes * 0.5).round()} хв.',
+          'Дай настоятися 2–3 хв і подавай. Смачного!',
+        ];
 
   /// URL красивого фото страви (стабільне на страву).
   String get imageUrl {
@@ -51,6 +68,11 @@ final List<DayMenu> mockWeek = [
       Ingredient('Вівсяні пластівці «Премія»', '400 г', 32, 'Бакалія'),
       Ingredient('Банан', '2 шт', 18, 'Овочі та фрукти'),
       Ingredient('Мед квітковий', '250 г', 89, 'Бакалія'),
+    ], steps: [
+      'Закип\'яти 400 мл води або молока в каструлі.',
+      'Всип 80 г вівсяних пластівців, вари на малому вогні 5–7 хв, помішуючи.',
+      'Наріж банан кружальцями, додай у кашу.',
+      'Зніми з вогню, полий медом і подавай теплою.',
     ]),
     Meal(type: 'Обід', title: 'Курячий бульйон з гречаною локшиною', equipment: 'Духовка', minutes: 30, kcal: 520, price: 82, img: 'chicken,soup', ingredients: [
       Ingredient('Куряче філе', '1 кг', 149, 'М\'ясо та птиця'),
