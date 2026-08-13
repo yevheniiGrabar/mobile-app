@@ -10,8 +10,8 @@ class AppColors {
   static const accentSoft = Color(0xFFE1F3E8);// тонована зелена підкладка
   static const green = Color(0xFF12A15A);    // ціни/економія = акцент
   static const amber = Color(0xFFE0A020);    // калорії/жири
-  static const blue = Color(0xFF3B82F6);     // білки
-  static const carbs = Color(0xFF34C759);    // вуглеводи
+  static const blue = Color(0xFF3B82F6);     // (резерв)
+  static const carbs = Color(0xFFEC7E63);    // вуглеводи (корал, як у Stitch)
   static const warn = Color(0xFFD6533F);
   static const text = Color(0xFF14181F);
   static const muted = Color(0xFF6B7280);
