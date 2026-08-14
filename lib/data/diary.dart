@@ -18,8 +18,38 @@ class DiaryStore extends ChangeNotifier {
 
   final List<DiaryEntry> today = [];
 
-  // Денні цілі (демо; підключимо Mifflin-St Jeor з профілю).
-  static const int goalKcal = 1900, goalProtein = 100, goalFat = 60, goalCarbs = 250;
+  // Денна ціль калорій — розраховується на екрані «Цілі калорій» (Mifflin-St Jeor).
+  static int goalKcal = 1900;
+  // Макро-цілі похідні від калорій (Б30% / Ж30% / В40%).
+  static int get goalProtein => (goalKcal * 0.30 / 4).round();
+  static int get goalFat => (goalKcal * 0.30 / 9).round();
+  static int get goalCarbs => (goalKcal * 0.40 / 4).round();
+
+  // Метрики користувача (демо-стан, щоб екран памʼятав введене).
+  static int weightKg = 70, heightCm = 175, age = 30;
+  static bool isMale = true;
+  static String activity = 'moderate'; // low | moderate | high
+  static String goalMode = 'maintain'; // lose | maintain | gain
+
+  /// Зберегти метрики + розраховану ціль (оновлює кільце на Головній).
+  void applyGoal({
+    required int weightKg,
+    required int heightCm,
+    required int age,
+    required bool isMale,
+    required String activity,
+    required String goalMode,
+    required int kcal,
+  }) {
+    DiaryStore.weightKg = weightKg;
+    DiaryStore.heightCm = heightCm;
+    DiaryStore.age = age;
+    DiaryStore.isMale = isMale;
+    DiaryStore.activity = activity;
+    DiaryStore.goalMode = goalMode;
+    DiaryStore.goalKcal = kcal;
+    notifyListeners();
+  }
 
   int get kcal => today.fold(0, (s, e) => s + e.kcal);
   int get protein => today.fold(0, (s, e) => s + e.protein);
