@@ -52,6 +52,12 @@ class MealizeApi {
   Future<Map<String, dynamic>> checkout(int planId) async =>
       _decode(await _http.post(_uri('/meal-plans/$planId/checkout'), headers: _headers));
 
+  /// POST /api/assistant — повідомлення до Зоряни (Claude) → текстова відповідь.
+  Future<String> assistant(String message) async {
+    final json = _decode(await _http.post(_uri('/assistant'), headers: _headers, body: jsonEncode({'message': message})));
+    return (json['reply'] ?? '').toString();
+  }
+
   /// Згенерувати меню і дочекатися ready|failed (полінг).
   Future<Map<String, dynamic>> generateAndWait(Map<String, dynamic> body, {int tries = 12}) async {
     final created = await createMealPlan(body);
