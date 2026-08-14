@@ -36,7 +36,7 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
         'diet_style': 'pp',
         'appliances': selectedEquip.toList(),
         'allergies': selectedAllergies.toList(),
-        'branch_id': StoreRegistry.instance.activeStoreId,
+        // branch_id не шлемо — бекенд підставить реальну філію Сільпо.
       });
       final data = result['data'] as Map<String, dynamic>?;
       final status = data?['status'];

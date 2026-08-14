@@ -28,7 +28,7 @@ class _CartScreenState extends State<CartScreen> {
       final gen = await _api.generateAndWait({
         'budget': 5000,
         'mode': 'economy',
-        'branch_id': StoreRegistry.instance.activeStoreId,
+        // branch_id резолвить бекенд (реальна філія Сільпо).
       });
       final data = gen['data'] as Map<String, dynamic>?;
       if (data?['status'] != 'ready') {
