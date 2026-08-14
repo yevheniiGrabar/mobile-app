@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../data/stores.dart';
+import '../data/api/mealize_api.dart';
 
 /// Список покупок (Stitch): згруповано по відділах, картки з чекбоксами,
 /// куплене — закреслено. Зверху — доказова економія (проти звичайних цін).
@@ -13,8 +15,46 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final _checked = <String>{}; // ключі куплених позицій
+  final _api = MealizeApi();
+  bool _busy = false;
 
   String _key(String dept, int i) => '$dept#$i';
+
+  /// Реальний checkout через BFF: згенерувати план → зібрати кошик у Сільпо → лінк.
+  Future<void> _checkout(StoreInfo store) async {
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final gen = await _api.generateAndWait({
+        'budget': 5000,
+        'mode': 'economy',
+        'branch_id': StoreRegistry.instance.activeStoreId,
+      });
+      final data = gen['data'] as Map<String, dynamic>?;
+      if (data?['status'] != 'ready') {
+        final err = (data?['error'] ?? '').toString();
+        messenger.showSnackBar(SnackBar(
+          content: Text(err.contains('401') ? 'Спочатку підключи Сільпо у Профілі' : 'Не готово: $err'),
+          duration: const Duration(seconds: 4)));
+        return;
+      }
+      final co = await _api.checkout(data!['id'] as int);
+      final link = co['checkout_web'] as String?;
+      if (link != null) {
+        await launchUrl(Uri.parse(link), webOnlyWindowName: '_blank', mode: LaunchMode.externalApplication);
+      } else {
+        messenger.showSnackBar(const SnackBar(content: Text('Кошик зібрано, але лінку ще немає')));
+      }
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(e.message.contains('кошик') ? 'Потрібен активний кошик у Сільпо' : 'Бекенд: ${e.message}'),
+        duration: const Duration(seconds: 4)));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Бекенд недоступний — демо-режим')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,14 +117,18 @@ class _CartScreenState extends State<CartScreen> {
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
         child: SizedBox(width: double.infinity, child: FilledButton.icon(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(canOrder
-              ? 'Оформлення в ${store.name} — checkout-лінк підключимо через MCP'
-              : 'Список готовий. Замовлення для «${store.name}» — скоро'),
-            duration: const Duration(seconds: 2))),
+          onPressed: _busy
+              ? null
+              : (canOrder
+                  ? () => _checkout(store)
+                  : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Список готовий. Замовлення для «${store.name}» — скоро'),
+                      duration: const Duration(seconds: 2)))),
           style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk, padding: const EdgeInsets.symmetric(vertical: 16)),
-          icon: Icon(canOrder ? Icons.shopping_bag_outlined : Icons.list_alt),
-          label: Text(canOrder ? 'Замовити в ${store.name}' : 'Згенерувати список',
+          icon: _busy
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentInk))
+              : Icon(canOrder ? Icons.shopping_bag_outlined : Icons.list_alt),
+          label: Text(_busy ? 'Збираємо кошик…' : (canOrder ? 'Замовити в ${store.name}' : 'Згенерувати список'),
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
         )),
       )),

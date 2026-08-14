@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../data/stores.dart';
+import '../data/api/mealize_api.dart';
 
 /// Налаштування меню (бюджет / склад сім'ї / раціон / алергії / техніка / магазин).
 /// Відкривається як під-екран із вкладки «Профіль».
@@ -19,6 +20,44 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
   final selectedAllergies = <String>{};
   final equipment = {'Плита', 'Духовка', 'Мікрохвильовка', 'Мультиварка', 'Аерогриль', 'Блендер'};
   final selectedEquip = <String>{'Плита', 'Духовка'};
+
+  final _api = MealizeApi();
+  bool _generating = false;
+
+  /// Реальна генерація меню через BFF (agent → matching → optimizer).
+  Future<void> _generate() async {
+    setState(() => _generating = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await _api.generateAndWait({
+        'budget': budget.round(),
+        'mode': 'economy',
+        'people': people,
+        'diet_style': 'pp',
+        'appliances': selectedEquip.toList(),
+        'allergies': selectedAllergies.toList(),
+        'branch_id': StoreRegistry.instance.activeStoreId,
+      });
+      final data = result['data'] as Map<String, dynamic>?;
+      final status = data?['status'];
+      if (status == 'ready') {
+        messenger.showSnackBar(SnackBar(
+          content: Text('✅ Меню готове! Економія ${data?['savings'] ?? 0} ₴'), duration: const Duration(seconds: 3)));
+      } else {
+        final err = (data?['error'] ?? '').toString();
+        messenger.showSnackBar(SnackBar(
+          content: Text(err.contains('401') ? 'Спочатку підключи Сільпо у Профілі' : 'Не вдалося: $err'),
+          duration: const Duration(seconds: 4)));
+      }
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Бекенд: ${e.message}'), duration: const Duration(seconds: 3)));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Бекенд недоступний — показуємо демо-меню'), duration: Duration(seconds: 3)));
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,11 +92,12 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
         _chips('Кухонне обладнання', equipment, selectedEquip, ok: true),
         const SizedBox(height: 8),
         SizedBox(width: double.infinity, child: FilledButton.icon(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('✨ Генерація меню — підключимо агента + Silpo MCP'), duration: Duration(seconds: 2))),
+          onPressed: _generating ? null : _generate,
           style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk, padding: const EdgeInsets.symmetric(vertical: 15)),
-          icon: const Icon(Icons.auto_awesome),
-          label: const Text('Скласти меню на тиждень', style: TextStyle(fontWeight: FontWeight.w800)),
+          icon: _generating
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentInk))
+              : const Icon(Icons.auto_awesome),
+          label: Text(_generating ? 'Зоряна складає меню…' : 'Скласти меню на тиждень', style: const TextStyle(fontWeight: FontWeight.w800)),
         )),
         const SizedBox(height: 24),
       ]),

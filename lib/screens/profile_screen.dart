@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
 import '../data/stores.dart';
+import '../widgets/silpo_connection_card.dart';
 import 'menu_settings_screen.dart';
 import 'subscription_screen.dart';
 
@@ -28,6 +29,7 @@ class ProfileScreen extends StatelessWidget {
         child: Column(children: [
           _accountCard(context),
           const SizedBox(height: 12),
+          const SilpoConnectionCard(),
           _statsCard(totalKcal, totalSpend),
           const SizedBox(height: 20),
           _group('НАЛАШТУВАННЯ', [
