@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// Палітра Mealize — СВІТЛА, зелений акцент (свіжо/їжа), у дусі Apple.
+/// Палітра у стилі iOS (Apple HIG): світлий згрупований фон, білі картки,
+/// волосяні розділювачі, системні кольори. Бренд-акцент — зелений.
 class AppColors {
-  static const bg = Color(0xFFF5F7F4);       // світлий фон з легким зеленим
-  static const surface = Color(0xFFFFFFFF);  // картки
-  static const surface2 = Color(0xFFEDF1EC); // чіпи/підкладки
-  static const accent = Color(0xFF12A15A);   // емералд-зелений (акцент/кнопки/ціни)
-  static const accentInk = Color(0xFFFFFFFF);// текст/іконка НА акценті
-  static const accentSoft = Color(0xFFE1F3E8);// тонована зелена підкладка
-  static const green = Color(0xFF12A15A);    // ціни/економія = акцент
-  static const amber = Color(0xFFE0A020);    // калорії/жири
-  static const blue = Color(0xFF3B82F6);     // (резерв)
-  static const carbs = Color(0xFFEC7E63);    // вуглеводи (корал, як у Stitch)
-  static const warn = Color(0xFFD6533F);
-  static const text = Color(0xFF14181F);
-  static const muted = Color(0xFF6B7280);
-  static const line = Color(0xFFE5EAE4);
+  static const bg = Color(0xFFF2F2F7);       // iOS systemGroupedBackground
+  static const surface = Color(0xFFFFFFFF);  // картки / рядки
+  static const surface2 = Color(0xFFEFEFF4); // чіпи/треки
+  static const accent = Color(0xFF12A15A);   // бренд-зелений (акцент/ціни)
+  static const accentInk = Color(0xFFFFFFFF);
+  static const accentSoft = Color(0xFFE3F3EA);
+  static const green = Color(0xFF12A15A);
+  static const amber = Color(0xFFFF9500);    // iOS orange (жири/калорії)
+  static const blue = Color(0xFF007AFF);     // iOS blue (білки)
+  static const carbs = Color(0xFFFF6B5E);    // корал (вуглеводи)
+  static const warn = Color(0xFFFF3B30);     // iOS red
+  static const text = Color(0xFF1C1C1E);     // iOS label
+  static const muted = Color(0xFF8E8E93);    // iOS secondary label / systemGray
+  static const line = Color(0xFFD8D8DD);     // hairline separator
 }
 
 ThemeData buildTheme() {
