@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../data/diary.dart';
+import '../widgets/dish_image.dart';
 import '../widgets/swap_sheet.dart';
 
 /// Екран рецепта (Stitch #16): велике фото, БЖУ, інгредієнти, кроки + таймер.
@@ -93,9 +94,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
           leading: const BackButton(color: Colors.white),
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(fit: StackFit.expand, children: [
-              Image.network(m.imageUrl, fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(color: AppColors.accentSoft,
-                  child: const Icon(Icons.ramen_dining, size: 60, color: AppColors.accent))),
+              DishImage(meal: m),
               const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
                 begin: Alignment.center, end: Alignment.bottomCenter,
                 colors: [Colors.transparent, Colors.black54]))),

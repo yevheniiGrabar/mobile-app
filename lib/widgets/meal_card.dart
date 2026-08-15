@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../screens/recipe_screen.dart';
+import 'dish_image.dart';
 import 'swap_sheet.dart';
 
 /// Картка страви у стилі Stitch: фото зліва, тип+ціна зверху,
@@ -61,7 +62,7 @@ class MealCard extends StatelessWidget {
   }
 }
 
-/// Мініатюра страви з фолбеком, якщо фото не завантажилось.
+/// Мініатюра страви.
 class _DishImage extends StatelessWidget {
   final Meal meal;
   const _DishImage({required this.meal});
@@ -69,24 +70,9 @@ class _DishImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
-      child: SizedBox(
-        width: 92, height: 92,
-        child: Image.network(
-          meal.imageUrl, fit: BoxFit.cover,
-          loadingBuilder: (c, child, progress) => progress == null ? child : _ph(true),
-          errorBuilder: (c, e, s) => _ph(false),
-        ),
-      ),
+      child: SizedBox(width: 92, height: 92, child: DishImage(meal: meal)),
     );
   }
-
-  Widget _ph(bool loading) => Container(
-        decoration: const BoxDecoration(gradient: LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [AppColors.surface2, AppColors.accentSoft])),
-        child: Center(child: Icon(loading ? Icons.restaurant : Icons.ramen_dining,
-          color: AppColors.accent.withValues(alpha: 0.7), size: 28)),
-      );
 }
 
 class _MiniTag extends StatelessWidget {

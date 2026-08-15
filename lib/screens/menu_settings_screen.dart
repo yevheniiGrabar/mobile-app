@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../data/stores.dart';
@@ -27,7 +28,8 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
   /// Реальна генерація меню через BFF (agent → matching → optimizer).
   Future<void> _generate() async {
     setState(() => _generating = true);
-    final messenger = ScaffoldMessenger.of(context);
+    String title = 'Готово';
+    String msg = '';
     try {
       final result = await _api.generateAndWait({
         'budget': budget.round(),
@@ -39,24 +41,36 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
         // branch_id не шлемо — бекенд підставить реальну філію Сільпо.
       });
       final data = result['data'] as Map<String, dynamic>?;
-      final status = data?['status'];
-      if (status == 'ready') {
-        messenger.showSnackBar(SnackBar(
-          content: Text('✅ Меню готове! Економія ${data?['savings'] ?? 0} ₴'), duration: const Duration(seconds: 3)));
+      if (data?['status'] == 'ready') {
+        msg = 'Меню на тиждень готове 🎉\nЕкономія ${data?['savings'] ?? 0} ₴ проти звичайних цін.';
       } else {
         final err = (data?['error'] ?? '').toString();
-        messenger.showSnackBar(SnackBar(
-          content: Text(err.contains('401') ? 'Спочатку підключи Сільпо у Профілі' : 'Не вдалося: $err'),
-          duration: const Duration(seconds: 4)));
+        title = 'Не вдалося';
+        msg = err.contains('401')
+            ? 'Спочатку підключи Сільпо: Профіль → «Підключити Сільпо» (телефон + код). Без цього Зоряна не бачить акцій.'
+            : 'Помилка генерації: ${err.isEmpty ? "невідома" : err}';
       }
     } on ApiException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Бекенд: ${e.message}'), duration: const Duration(seconds: 3)));
+      title = 'Не вдалося';
+      msg = 'Бекенд: ${e.message}';
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Бекенд недоступний — показуємо демо-меню'), duration: Duration(seconds: 3)));
+      title = 'Бекенд недоступний';
+      msg = 'Сервер не відповідає. Запусти BFF (php artisan serve) і спробуй ще раз.';
     } finally {
       if (mounted) setState(() => _generating = false);
     }
+    if (mounted) _showResult(title, msg);
+  }
+
+  void _showResult(String title, String msg) {
+    showCupertinoDialog(
+      context: context,
+      builder: (c) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Text('\n$msg'),
+        actions: [CupertinoDialogAction(isDefaultAction: true, onPressed: () => Navigator.of(c).pop(), child: const Text('OK'))],
+      ),
+    );
   }
 
   @override

@@ -57,10 +57,16 @@ class Meal {
           'Дай настоятися 2–3 хв і подавай. Смачного!',
         ];
 
-  /// URL красивого фото страви (стабільне на страву).
+  /// Локальний ассет із красивим фото страви (згенеровано AI один раз, вшито в апку).
+  String get slug => img.replaceAll(RegExp(r'[ ,]+'), '_');
+  String get assetImage => 'assets/dishes/$slug.jpg';
+
+  /// Мережевий фолбек (AI-генерація за назвою) — для довільних майбутніх страв.
   String get imageUrl {
-    final lock = title.hashCode.abs() % 100000;
-    return 'https://loremflickr.com/240/240/${Uri.encodeComponent(img)}?lock=$lock';
+    final seed = title.hashCode.abs() % 1000000;
+    final prompt = '$img, ukrainian home-cooked meal, professional food photography, '
+        'appetizing, plated, natural light, top-down';
+    return 'https://image.pollinations.ai/prompt/${Uri.encodeComponent(prompt)}?width=400&height=400&nologo=true&seed=$seed';
   }
 }
 
