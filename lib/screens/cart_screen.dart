@@ -119,7 +119,7 @@ class _CartScreenState extends State<CartScreen> {
             onPressed: _busy ? null : () => _checkout(planId: plan.id),
             child: _busy
                 ? const CupertinoActivityIndicator(color: AppColors.accentInk)
-                : const Text('Замовити в Сільпо', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                : const Text('Замовити в Сільпо', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.accentInk)),
           )),
         )),
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -200,7 +200,7 @@ class _CartScreenState extends State<CartScreen> {
           child: _busy
               ? const CupertinoActivityIndicator(color: AppColors.accentInk)
               : Text(canOrder ? 'Замовити в ${store.name}' : 'Згенерувати список',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.accentInk)),
         )),
       )),
       const SliverToBoxAdapter(child: SizedBox(height: 100)),

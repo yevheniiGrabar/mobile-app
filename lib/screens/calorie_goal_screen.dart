@@ -97,7 +97,7 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
                 ),
               );
             },
-            child: const Text('Зберегти ціль', style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text('Зберегти ціль', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.accentInk)),
           )),
           const SizedBox(height: 8),
           const Center(child: Text('Формула Міффліна-Сан-Жеора · рекомендація, не медична порада',

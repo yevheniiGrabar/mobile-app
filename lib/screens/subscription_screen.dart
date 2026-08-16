@@ -57,7 +57,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             content: const Text('\nЧерез App Store / Google Play (IAP).'),
             actions: [CupertinoDialogAction(isDefaultAction: true, onPressed: () => Navigator.of(c).pop(), child: const Text('OK'))],
           )),
-          child: const Text('Спробувати 7 днів безкоштовно', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          child: const Text('Спробувати 7 днів безкоштовно', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.accentInk)),
         )),
         const SizedBox(height: 8),
         Center(child: Text(plan == 1 ? 'Далі 990 ₴/рік · скасувати будь-коли' : 'Далі 149 ₴/міс · скасувати будь-коли',

@@ -113,7 +113,7 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
           onPressed: _generating ? null : _generate,
           child: _generating
               ? const CupertinoActivityIndicator(color: AppColors.accentInk)
-              : const Text('Скласти меню на тиждень', style: TextStyle(fontWeight: FontWeight.w700)),
+              : const Text('Скласти меню на тиждень', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.accentInk)),
         )),
         const SizedBox(height: 24),
       ])),
