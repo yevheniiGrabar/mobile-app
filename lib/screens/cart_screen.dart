@@ -5,6 +5,7 @@ import '../theme.dart';
 import '../models.dart';
 import '../data/stores.dart';
 import '../data/api/mealize_api.dart';
+import '../data/plan_store.dart';
 
 /// Список покупок (Stitch): згруповано по відділах, картки з чекбоксами,
 /// куплене — закреслено. Зверху — доказова економія (проти звичайних цін).
@@ -21,25 +22,29 @@ class _CartScreenState extends State<CartScreen> {
 
   String _key(String dept, int i) => '$dept#$i';
 
-  /// Реальний checkout через BFF: згенерувати план → зібрати кошик у Сільпо → лінк.
-  Future<void> _checkout(StoreInfo store) async {
+  /// Checkout через BFF. Якщо plan вже згенеровано — оформлюємо його id;
+  /// інакше спершу генеруємо (демо), потім checkout → checkoutWebLink.
+  Future<void> _checkout({int? planId}) async {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final gen = await _api.generateAndWait({
-        'budget': 5000,
-        'mode': 'economy',
-        // branch_id резолвить бекенд (реальна філія Сільпо).
-      });
-      final data = gen['data'] as Map<String, dynamic>?;
-      if (data?['status'] != 'ready') {
-        final err = (data?['error'] ?? '').toString();
-        messenger.showSnackBar(SnackBar(
-          content: Text(err.contains('401') ? 'Спочатку підключи Сільпо у Профілі' : 'Не готово: $err'),
-          duration: const Duration(seconds: 4)));
-        return;
+      int id;
+      if (planId != null) {
+        id = planId;
+      } else {
+        final gen = await _api.generateAndWait({'budget': 5000, 'mode': 'economy'});
+        final data = gen['data'] as Map<String, dynamic>?;
+        if (data?['status'] != 'ready') {
+          final err = (data?['error'] ?? '').toString();
+          messenger.showSnackBar(SnackBar(
+            content: Text(err.contains('401') ? 'Спочатку підключи Сільпо у Профілі' : 'Не готово: $err'),
+            duration: const Duration(seconds: 4)));
+          return;
+        }
+        PlanStore.instance.setFromPlan(data!);
+        id = data['id'] as int;
       }
-      final co = await _api.checkout(data!['id'] as int);
+      final co = await _api.checkout(id);
       final link = co['checkout_web'] as String?;
       if (link != null) {
         await launchUrl(Uri.parse(link), webOnlyWindowName: '_blank', mode: LaunchMode.externalApplication);
@@ -59,6 +64,70 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: PlanStore.instance,
+      builder: (context, _) =>
+          PlanStore.instance.hasPlan ? _buildReal(context, PlanStore.instance) : _buildMock(context),
+    );
+  }
+
+  /// Реальний кошик із BFF (після «Скласти меню»): справжні товари + економія.
+  Widget _buildReal(BuildContext context, PlanStore plan) {
+    final pay = plan.optimizedTotal ?? plan.items.fold<int>(0, (s, i) => s + i.priceTotal);
+    final regular = plan.naiveTotal ?? pay;
+    final saved = plan.savings ?? (regular - pay);
+    final pct = regular > 0 ? (saved / regular * 100).round() : 0;
+
+    return CupertinoPageScaffold(
+      backgroundColor: AppColors.bg,
+      child: CustomScrollView(slivers: [
+        const CupertinoSliverNavigationBar(backgroundColor: AppColors.bg, border: null, largeTitle: Text('Список')),
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Row(children: [
+            _totalPill(pay),
+            const Spacer(),
+            Text('${plan.items.length} позицій · реальні ціни Сільпо', style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          ]),
+        )),
+        if (saved > 0) SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4), child: _savingsCard(regular, pay, saved, pct))),
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+          child: Row(children: [
+            const Text('Кошик', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            const SizedBox(width: 6),
+            Text('(${plan.items.length})', style: const TextStyle(fontSize: 14, color: AppColors.muted, fontWeight: FontWeight.w600)),
+          ]),
+        )),
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
+            child: Column(children: [
+              for (int i = 0; i < plan.items.length; i++) ...[
+                if (i > 0) const Divider(height: 1, thickness: 1, color: AppColors.line, indent: 56),
+                _planItemRow(i, plan.items[i]),
+              ],
+            ]),
+          ),
+        )),
+        SliverToBoxAdapter(child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+          child: SizedBox(width: double.infinity, child: CupertinoButton(
+            color: AppColors.accent, borderRadius: BorderRadius.circular(14),
+            onPressed: _busy ? null : () => _checkout(planId: plan.id),
+            child: _busy
+                ? const CupertinoActivityIndicator(color: AppColors.accentInk)
+                : const Text('Замовити в Сільпо', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          )),
+        )),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      ]),
+    );
+  }
+
+  Widget _buildMock(BuildContext context) {
     final byDept = shoppingListByDept();
     final items = byDept.values.expand((e) => e).toList();
     final pay = items.fold<int>(0, (s, i) => s + i.price);              // до сплати (з акціями)
@@ -124,7 +193,7 @@ class _CartScreenState extends State<CartScreen> {
           onPressed: _busy
               ? null
               : (canOrder
-                  ? () => _checkout(store)
+                  ? () => _checkout()
                   : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Список готовий. Замовлення для «${store.name}» — скоро'),
                       duration: const Duration(seconds: 2)))),
@@ -136,6 +205,48 @@ class _CartScreenState extends State<CartScreen> {
       )),
       const SliverToBoxAdapter(child: SizedBox(height: 100)),
     ]));
+  }
+
+  Widget _totalPill(int total) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+    decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(20)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      const Icon(CupertinoIcons.cart, size: 16, color: AppColors.accent),
+      const SizedBox(width: 6),
+      Text('Разом: $total ₴', style: const TextStyle(color: AppColors.accent, fontSize: 13.5, fontWeight: FontWeight.w800)),
+    ]),
+  );
+
+  Widget _planItemRow(int i, PlanItem it) {
+    final key = 'plan#$i';
+    final done = _checked.contains(key);
+    return InkWell(
+      onTap: () => setState(() => done ? _checked.remove(key) : _checked.add(key)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: Row(children: [
+          Icon(done ? Icons.check_circle : Icons.circle_outlined, color: done ? AppColors.accent : AppColors.muted, size: 24),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(it.title.isEmpty ? it.ingredient : it.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                color: done ? AppColors.muted : AppColors.text, decoration: done ? TextDecoration.lineThrough : null)),
+            const SizedBox(height: 2),
+            Row(children: [
+              Text('для: ${it.ingredient}', style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
+              if (it.isPromo) ...[
+                const SizedBox(width: 6),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(6)),
+                  child: const Text('Акція', style: TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.w700))),
+              ],
+            ]),
+          ])),
+          Text('${it.priceTotal} ₴', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+            color: done ? AppColors.muted : AppColors.green, decoration: done ? TextDecoration.lineThrough : null)),
+        ]),
+      ),
+    );
   }
 
   /// Доказова економія: сума + % + порівняння двох кошиків.

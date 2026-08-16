@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../data/stores.dart';
 import '../data/api/mealize_api.dart';
+import '../data/plan_store.dart';
 
 /// Налаштування меню (бюджет / склад сім'ї / раціон / алергії / техніка / магазин).
 /// Відкривається як під-екран із вкладки «Профіль».
@@ -42,7 +43,8 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
       });
       final data = result['data'] as Map<String, dynamic>?;
       if (data?['status'] == 'ready') {
-        msg = 'Меню на тиждень готове 🎉\nЕкономія ${data?['savings'] ?? 0} ₴ проти звичайних цін.';
+        PlanStore.instance.setFromPlan(data!); // показати реальний кошик у «Списку»
+        msg = 'Меню на тиждень готове 🎉\nЕкономія ${data['savings'] ?? 0} ₴. Дивись у вкладці «Список».';
       } else {
         final err = (data?['error'] ?? '').toString();
         title = 'Не вдалося';
