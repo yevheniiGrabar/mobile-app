@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
@@ -79,14 +80,17 @@ class _SwapSheet extends StatelessWidget {
           const SizedBox(width: 14),
           _tag(Icons.timer_outlined, '${o.minutes} хв', AppColors.muted),
           const Spacer(),
-          FilledButton(
+          CupertinoButton(
+            color: AppColors.accent,
+            borderRadius: BorderRadius.circular(20),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+            minimumSize: Size.zero,
             onPressed: () {
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              messenger.showSnackBar(SnackBar(
                 content: Text('Замінено на «${o.title}» ✓'), duration: const Duration(seconds: 2)));
             },
-            style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), visualDensity: VisualDensity.compact),
             child: const Text('Обрати', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
           ),
         ]),

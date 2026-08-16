@@ -26,7 +26,12 @@ ThemeData buildTheme() {
     colorScheme: base.colorScheme.copyWith(
       primary: AppColors.accent, secondary: AppColors.accent, surface: AppColors.surface,
     ),
-    textTheme: base.textTheme.apply(bodyColor: AppColors.text, displayColor: AppColors.text),
+    // Системний шрифт Apple (SF Pro) на iOS; акуратний фолбек на web/Android.
+    textTheme: base.textTheme.apply(
+      bodyColor: AppColors.text, displayColor: AppColors.text,
+      fontFamily: '.SF Pro Text',
+      fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Arial'],
+    ),
     dividerColor: AppColors.line,
   );
 }

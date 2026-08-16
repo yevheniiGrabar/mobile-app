@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../theme.dart';
@@ -177,16 +178,14 @@ class _AssistantSheetState extends State<_AssistantSheet> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
             child: Row(children: [
-              Expanded(child: TextField(
+              Expanded(child: CupertinoTextField(
                 controller: _input,
-                textInputAction: TextInputAction.send,
+                placeholder: 'Напиши або натисни мікрофон…',
                 onSubmitted: _send,
-                decoration: InputDecoration(
-                  hintText: 'Напиши або натисни мікрофон…',
-                  filled: true, fillColor: AppColors.surface2,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                style: const TextStyle(color: AppColors.text, fontSize: 14.5),
+                placeholderStyle: const TextStyle(color: AppColors.muted, fontSize: 14.5),
+                decoration: BoxDecoration(color: AppColors.surface2, borderRadius: BorderRadius.circular(22)),
               )),
               const SizedBox(width: 10),
               GestureDetector(

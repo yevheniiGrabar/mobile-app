@@ -147,35 +147,26 @@ class ProfileScreen extends StatelessWidget {
     ));
   }
 
-  Widget _group(String title, List<Widget> rows) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Padding(padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(title, style: const TextStyle(fontSize: 11, letterSpacing: 1, color: AppColors.muted, fontWeight: FontWeight.w700))),
-    Container(
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
-      child: Column(children: [
-        for (int i = 0; i < rows.length; i++) ...[
-          if (i > 0) const Divider(height: 1, thickness: 1, color: AppColors.line, indent: 52),
-          rows[i],
-        ],
-      ]),
-    ),
-  ]);
+  /// Нативна iOS-група (як у Налаштуваннях): inset-grouped список.
+  Widget _group(String title, List<Widget> rows) => CupertinoListSection.insetGrouped(
+    header: Text(title, style: const TextStyle(fontSize: 12, letterSpacing: 0.3, color: AppColors.muted, fontWeight: FontWeight.w500)),
+    backgroundColor: AppColors.bg,
+    margin: const EdgeInsets.only(bottom: 8),
+    dividerMargin: 52,
+    children: rows,
+  );
 
   Widget _row(BuildContext context, IconData icon, String label, String value, VoidCallback onTap, {bool accent = false}) =>
-    InkWell(
+    CupertinoListTile.notched(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        child: Row(children: [
-          Icon(icon, size: 20, color: accent ? AppColors.accent : AppColors.text),
-          const SizedBox(width: 14),
-          Expanded(child: Text(label, style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600,
-            color: accent ? AppColors.accent : AppColors.text))),
-          if (value.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 6),
-            child: Text(value, style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600))),
-          const Icon(Icons.chevron_right, color: AppColors.muted, size: 20),
-        ]),
-      ),
+      backgroundColor: AppColors.surface,
+      leading: Icon(icon, size: 22, color: accent ? AppColors.accent : AppColors.text),
+      title: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500,
+        color: accent ? AppColors.accent : AppColors.text)),
+      additionalInfo: value.isNotEmpty
+          ? Text(value, style: const TextStyle(fontSize: 14, color: AppColors.muted))
+          : null,
+      trailing: const CupertinoListTileChevron(),
     );
 
   String _fmt(int n) {
