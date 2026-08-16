@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 
@@ -14,11 +15,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: AppColors.bg,
-      appBar: AppBar(backgroundColor: AppColors.bg, elevation: 0,
-        leading: const CloseButton(), title: const Text('Mealize Pro', style: TextStyle(fontWeight: FontWeight.w800))),
-      body: ListView(padding: const EdgeInsets.fromLTRB(20, 4, 20, 24), children: [
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Mealize Pro'),
+        backgroundColor: AppColors.surface,
+        border: const Border(bottom: BorderSide(color: AppColors.line, width: 0.5)),
+        leading: CupertinoButton(padding: EdgeInsets.zero, onPressed: () => Navigator.of(context).pop(),
+          child: const Icon(CupertinoIcons.xmark, color: AppColors.muted, size: 22)),
+      ),
+      child: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 8, 20, 24), children: [
         Center(child: Container(
           width: 72, height: 72,
           decoration: BoxDecoration(shape: BoxShape.circle,
@@ -44,11 +50,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         const SizedBox(height: 10),
         _planCard(0, 'Місячний', '149 ₴ / міс', 'Гнучко, скасувати будь-коли'),
         const SizedBox(height: 20),
-        SizedBox(width: double.infinity, child: FilledButton(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Оформлення підписки — через App Store / Google Play (IAP)'), duration: Duration(seconds: 3))),
-          style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk, padding: const EdgeInsets.symmetric(vertical: 16)),
-          child: const Text('Спробувати 7 днів безкоштовно', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+        SizedBox(width: double.infinity, child: CupertinoButton(
+          color: AppColors.accent, borderRadius: BorderRadius.circular(14),
+          onPressed: () => showCupertinoDialog(context: context, builder: (c) => CupertinoAlertDialog(
+            title: const Text('Оформлення підписки'),
+            content: const Text('\nЧерез App Store / Google Play (IAP).'),
+            actions: [CupertinoDialogAction(isDefaultAction: true, onPressed: () => Navigator.of(c).pop(), child: const Text('OK'))],
+          )),
+          child: const Text('Спробувати 7 днів безкоштовно', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
         )),
         const SizedBox(height: 8),
         Center(child: Text(plan == 1 ? 'Далі 990 ₴/рік · скасувати будь-коли' : 'Далі 149 ₴/міс · скасувати будь-коли',
@@ -56,7 +65,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         const SizedBox(height: 12),
         const Center(child: Text('Базовий план назавжди безкоштовний',
           style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600))),
-      ]),
+      ])),
     );
   }
 

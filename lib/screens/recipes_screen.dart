@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../widgets/meal_card.dart';
@@ -39,9 +39,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
   @override
   Widget build(BuildContext context) {
     final meals = _filtered;
-    return CustomScrollView(slivers: [
-      SliverAppBar(pinned: true, backgroundColor: AppColors.bg, elevation: 0, titleSpacing: 16,
-        title: const Text('Рецепти', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22))),
+    return CupertinoPageScaffold(
+      backgroundColor: AppColors.bg,
+      child: CustomScrollView(slivers: [
+      const CupertinoSliverNavigationBar(
+        backgroundColor: AppColors.bg, border: null, largeTitle: Text('Рецепти')),
       SliverToBoxAdapter(child: SizedBox(height: 48, child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -71,6 +73,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
         child: MealCard(meal: meals[i]),
       ), childCount: meals.length)),
       const SliverToBoxAdapter(child: SizedBox(height: 100)),
-    ]);
+    ]));
   }
 }

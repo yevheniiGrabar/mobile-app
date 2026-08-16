@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
@@ -68,9 +69,11 @@ class _CartScreenState extends State<CartScreen> {
     final store = StoreRegistry.instance.active.info;
     final canOrder = store.canOrder;
 
-    return CustomScrollView(slivers: [
-      SliverAppBar(pinned: true, backgroundColor: AppColors.bg, elevation: 0, titleSpacing: 16,
-        title: const Text('Список покупок', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22))),
+    return CupertinoPageScaffold(
+      backgroundColor: AppColors.bg,
+      child: CustomScrollView(slivers: [
+      const CupertinoSliverNavigationBar(
+        backgroundColor: AppColors.bg, border: null, largeTitle: Text('Список')),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
         child: Row(children: [
@@ -116,7 +119,8 @@ class _CartScreenState extends State<CartScreen> {
       ],
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-        child: SizedBox(width: double.infinity, child: FilledButton.icon(
+        child: SizedBox(width: double.infinity, child: CupertinoButton(
+          color: AppColors.accent, borderRadius: BorderRadius.circular(14),
           onPressed: _busy
               ? null
               : (canOrder
@@ -124,16 +128,14 @@ class _CartScreenState extends State<CartScreen> {
                   : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Список готовий. Замовлення для «${store.name}» — скоро'),
                       duration: const Duration(seconds: 2)))),
-          style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk, padding: const EdgeInsets.symmetric(vertical: 16)),
-          icon: _busy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentInk))
-              : Icon(canOrder ? Icons.shopping_bag_outlined : Icons.list_alt),
-          label: Text(_busy ? 'Збираємо кошик…' : (canOrder ? 'Замовити в ${store.name}' : 'Згенерувати список'),
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          child: _busy
+              ? const CupertinoActivityIndicator(color: AppColors.accentInk)
+              : Text(canOrder ? 'Замовити в ${store.name}' : 'Згенерувати список',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
         )),
       )),
       const SliverToBoxAdapter(child: SizedBox(height: 100)),
-    ]);
+    ]));
   }
 
   /// Доказова економія: сума + % + порівняння двох кошиків.

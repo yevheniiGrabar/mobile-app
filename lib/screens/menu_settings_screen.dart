@@ -75,18 +75,19 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: AppColors.bg,
-      appBar: AppBar(backgroundColor: AppColors.bg, elevation: 0, leading: const BackButton(),
-        title: const Text('Налаштування меню', style: TextStyle(fontWeight: FontWeight.w800))),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Налаштування меню'), backgroundColor: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.line, width: 0.5))),
+      child: SafeArea(child: ListView(padding: const EdgeInsets.all(16), children: [
         _storeSelector(),
         _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('Бюджет на тиждень', style: TextStyle(fontWeight: FontWeight.w700)),
             Text('${budget.round()} ₴', style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w800, fontSize: 16)),
           ]),
-          Slider(value: budget, min: 800, max: 10000, divisions: 46, activeColor: AppColors.accent,
+          CupertinoSlider(value: budget, min: 800, max: 10000, divisions: 46, activeColor: AppColors.accent,
             onChanged: (v) => setState(() => budget = v)),
           const Text('800 (Економ) · 5 000 (Оптимальний) · 10 000 (Преміум)', style: TextStyle(fontSize: 11, color: AppColors.muted)),
         ])),
@@ -105,16 +106,15 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
         _chips('Алергії та виключення', allergies, selectedAllergies, warn: true),
         _chips('Кухонне обладнання', equipment, selectedEquip, ok: true),
         const SizedBox(height: 8),
-        SizedBox(width: double.infinity, child: FilledButton.icon(
+        SizedBox(width: double.infinity, child: CupertinoButton(
+          color: AppColors.accent, borderRadius: BorderRadius.circular(14),
           onPressed: _generating ? null : _generate,
-          style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.accentInk, padding: const EdgeInsets.symmetric(vertical: 15)),
-          icon: _generating
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentInk))
-              : const Icon(Icons.auto_awesome),
-          label: Text(_generating ? 'Зоряна складає меню…' : 'Скласти меню на тиждень', style: const TextStyle(fontWeight: FontWeight.w800)),
+          child: _generating
+              ? const CupertinoActivityIndicator(color: AppColors.accentInk)
+              : const Text('Скласти меню на тиждень', style: TextStyle(fontWeight: FontWeight.w700)),
         )),
         const SizedBox(height: 24),
-      ]),
+      ])),
     );
   }
 

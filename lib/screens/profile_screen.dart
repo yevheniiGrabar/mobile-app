@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
@@ -23,9 +24,11 @@ class ProfileScreen extends StatelessWidget {
     final totalSpend = _spend.fold<int>(0, (s, x) => s + x);
     const totalKcal = 13720;
 
-    return CustomScrollView(slivers: [
-      SliverAppBar(pinned: true, backgroundColor: AppColors.bg, elevation: 0, titleSpacing: 16,
-        title: const Text('Профіль', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22))),
+    return CupertinoPageScaffold(
+      backgroundColor: AppColors.bg,
+      child: CustomScrollView(slivers: [
+      const CupertinoSliverNavigationBar(
+        backgroundColor: AppColors.bg, border: null, largeTitle: Text('Профіль')),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
         child: Column(children: [
@@ -57,7 +60,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 100),
         ]),
       )),
-    ]);
+    ]));
   }
 
   void _openSettings(BuildContext c) =>

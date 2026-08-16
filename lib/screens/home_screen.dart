@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
@@ -28,27 +29,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final spent = mockWeek.fold<int>(0, (s, x) => s + x.total);
     final daysLeft = (_days.length - _todayIndex - 1).clamp(0, 7);
 
-    return CustomScrollView(slivers: [
-      SliverAppBar(
-        pinned: true, backgroundColor: AppColors.bg, elevation: 0,
-        titleSpacing: 16,
-        title: Row(children: [
-          Container(width: 34, height: 34,
-            decoration: BoxDecoration(shape: BoxShape.circle,
-              gradient: const RadialGradient(center: Alignment(-0.3, -0.3), radius: 0.9, colors: [Color(0xFF4FD08A), AppColors.accent])),
-            child: const Icon(Icons.eco, color: Colors.white, size: 18)),
-          const SizedBox(width: 10),
-          const Text('Mealize', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
-        ]),
-        actions: [
-          IconButton(
-            tooltip: 'Mealize Pro',
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => const SubscriptionScreen(), fullscreenDialog: true)),
-            icon: const Icon(Icons.workspace_premium, color: AppColors.accent),
-          ),
-          const SizedBox(width: 4),
-        ],
+    return CupertinoPageScaffold(
+      backgroundColor: AppColors.bg,
+      child: CustomScrollView(slivers: [
+      CupertinoSliverNavigationBar(
+        backgroundColor: AppColors.bg,
+        border: null,
+        largeTitle: const Text('Mealize'),
+        trailing: GestureDetector(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => const SubscriptionScreen(), fullscreenDialog: true)),
+          child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accent, size: 26),
+        ),
       ),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
@@ -99,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: MealCard(meal: d.meals[i]),
         ), childCount: d.meals.length)),
       const SliverToBoxAdapter(child: SizedBox(height: 100)),
-    ]);
+    ]));
   }
 
   String _dayNameFull(int i) => const ['Понеділок','Вівторок','Середа','Четвер','П\'ятниця','Субота','Неділя'][i.clamp(0, 6)];
