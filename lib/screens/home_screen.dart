@@ -180,15 +180,26 @@ class _NutritionCard extends StatelessWidget {
         _ActivityRings(
           size: 196, stroke: 13,
           rings: [
-            _RingData(carbs / cGoal, AppColors.carbs),   // зовнішнє
-            _RingData(fat / fGoal, AppColors.amber),     // середнє
-            _RingData(protein / pGoal, AppColors.accent), // внутрішнє
+            _RingData('Вуглеводи', carbs, cGoal, AppColors.carbs),  // зовнішнє
+            _RingData('Жири', fat, fGoal, AppColors.amber),         // середнє
+            _RingData('Білки', protein, pGoal, AppColors.accent),   // внутрішнє
           ],
-          center: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('$kcal', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, height: 1.0)),
-            const SizedBox(height: 3),
-            Text('з $kcalGoal ккал', style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600)),
-          ]),
+          centerBuilder: (active, rings) {
+            if (active == null) {
+              return Column(mainAxisSize: MainAxisSize.min, children: [
+                Text('$kcal', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, height: 1.0)),
+                const SizedBox(height: 3),
+                Text('з $kcalGoal ккал', style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600)),
+              ]);
+            }
+            final r = rings[active];
+            return Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('${r.value}', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, height: 1.0, color: r.color)),
+              Text('/ ${r.goal} г', style: const TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(r.label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: r.color)),
+            ]);
+          },
         ),
         const SizedBox(height: 16),
         _legendRow('Білки', protein, pGoal, AppColors.accent),
@@ -215,29 +226,78 @@ class _NutritionCard extends StatelessWidget {
   }
 }
 
-/// Дані одного кільця: відсоток заповнення (0..1+) та колір.
+/// Дані одного кільця: назва макросу, з'їдено/ціль (г) та колір.
 class _RingData {
-  final double pct; final Color color;
-  const _RingData(this.pct, this.color);
+  final String label;
+  final int value, goal;
+  final Color color;
+  const _RingData(this.label, this.value, this.goal, this.color);
+  double get pct => goal > 0 ? value / goal : 0.0;
 }
 
-/// Концентричні кільця прогресу в стилі Apple Watch «Активність».
-class _ActivityRings extends StatelessWidget {
+/// Концентричні кільця прогресу як Apple Watch «Активність».
+/// Наведення мишею (веб) або тап (телефон) підсвічує кільце, збільшує його
+/// й показує відповідний макрос у центрі.
+class _ActivityRings extends StatefulWidget {
   final double size, stroke;
   final List<_RingData> rings; // від зовнішнього до внутрішнього
-  final Widget center;
-  const _ActivityRings({required this.size, required this.stroke, required this.rings, required this.center});
+  final Widget Function(int? active, List<_RingData> rings) centerBuilder;
+  const _ActivityRings({required this.size, required this.stroke, required this.rings, required this.centerBuilder});
+  @override
+  State<_ActivityRings> createState() => _ActivityRingsState();
+}
+
+class _ActivityRingsState extends State<_ActivityRings> with TickerProviderStateMixin {
+  static const _gap = 6.0;
+  late final AnimationController _fill =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..forward();
+  late final AnimationController _pop =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  int? _active;
+
+  @override
+  void dispose() { _fill.dispose(); _pop.dispose(); super.dispose(); }
+
+  double get _maxStroke => widget.stroke * 1.55;
+  double get _rOuter => widget.size / 2 - _maxStroke / 2;
+
+  /// Яке кільце під точкою (за відстанню від центру).
+  int? _hitTest(Offset local) {
+    final c = Offset(widget.size / 2, widget.size / 2);
+    final d = (local - c).distance;
+    for (int i = 0; i < widget.rings.length; i++) {
+      final radius = _rOuter - i * (widget.stroke + _gap);
+      if ((d - radius).abs() <= widget.stroke / 2 + _gap / 2) return i;
+    }
+    return null;
+  }
+
+  void _setActive(int? i) {
+    if (i == _active) return;
+    setState(() => _active = i);
+    i != null ? _pop.forward() : _pop.reverse();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size, height: size,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: 1),
-        duration: const Duration(milliseconds: 900),
-        curve: Curves.easeOutCubic,
-        builder: (_, t, _) => CustomPaint(
-          painter: _RingsPainter(rings: rings, stroke: stroke, t: t),
-          child: Center(child: center),
+    final curved = CurvedAnimation(parent: _fill, curve: Curves.easeOutCubic);
+    return MouseRegion(
+      onHover: (e) => _setActive(_hitTest(e.localPosition)),
+      onExit: (_) => _setActive(null),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (d) { final i = _hitTest(d.localPosition); _setActive(i == _active ? null : i); },
+        child: SizedBox(
+          width: widget.size, height: widget.size,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([_fill, _pop]),
+            builder: (_, _) => CustomPaint(
+              painter: _RingsPainter(
+                rings: widget.rings, stroke: widget.stroke, gap: _gap,
+                rOuter: _rOuter, fillT: curved.value, active: _active, pop: _pop.value),
+              child: Center(child: widget.centerBuilder(_active, widget.rings)),
+            ),
+          ),
         ),
       ),
     );
@@ -245,32 +305,45 @@ class _ActivityRings extends StatelessWidget {
 }
 
 class _RingsPainter extends CustomPainter {
-  final List<_RingData> rings; final double stroke, t;
-  _RingsPainter({required this.rings, required this.stroke, required this.t});
-  static const _gap = 6.0;
+  final List<_RingData> rings;
+  final double stroke, gap, rOuter, fillT, pop;
+  final int? active;
+  _RingsPainter({required this.rings, required this.stroke, required this.gap,
+    required this.rOuter, required this.fillT, required this.active, required this.pop});
+
   @override
   void paint(Canvas canvas, Size size) {
     final c = size.center(Offset.zero);
     for (int i = 0; i < rings.length; i++) {
-      final radius = size.width / 2 - stroke / 2 - i * (stroke + _gap);
+      final radius = rOuter - i * (stroke + gap);
       if (radius <= 0) continue;
+      final isActive = i == active;
+      final dim = active != null && !isActive;
+      final w = isActive ? stroke + stroke * 0.55 * pop : stroke; // активне кільце товщає
       final rect = Rect.fromCircle(center: c, radius: radius);
       // Доріжка (фон кільця).
       canvas.drawArc(rect, 0, 2 * math.pi, false, Paint()
-        ..style = PaintingStyle.stroke..strokeWidth = stroke..strokeCap = StrokeCap.round
-        ..color = rings[i].color.withValues(alpha: 0.15));
-      // Прогрес.
-      final sweep = 2 * math.pi * rings[i].pct.clamp(0.0, 1.0) * t;
-      if (sweep > 0) {
+        ..style = PaintingStyle.stroke..strokeWidth = w..strokeCap = StrokeCap.round
+        ..color = rings[i].color.withValues(alpha: isActive ? 0.22 : 0.15));
+      final sweep = 2 * math.pi * rings[i].pct.clamp(0.0, 1.0) * fillT;
+      if (sweep <= 0) continue;
+      // Свічення під активним кільцем.
+      if (isActive && pop > 0) {
         canvas.drawArc(rect, -math.pi / 2, sweep, false, Paint()
-          ..style = PaintingStyle.stroke..strokeWidth = stroke..strokeCap = StrokeCap.round
-          ..color = rings[i].color);
+          ..style = PaintingStyle.stroke..strokeWidth = w..strokeCap = StrokeCap.round
+          ..color = rings[i].color.withValues(alpha: 0.35 * pop)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6 * pop));
       }
+      // Прогрес (неактивні трохи приглушені).
+      canvas.drawArc(rect, -math.pi / 2, sweep, false, Paint()
+        ..style = PaintingStyle.stroke..strokeWidth = w..strokeCap = StrokeCap.round
+        ..color = dim ? rings[i].color.withValues(alpha: 0.45) : rings[i].color);
     }
   }
+
   @override
-  bool shouldRepaint(covariant _RingsPainter old) =>
-      old.t != t || old.stroke != stroke || old.rings != rings;
+  bool shouldRepaint(covariant _RingsPainter o) =>
+      o.fillT != fillT || o.pop != pop || o.active != active || o.rings != rings || o.stroke != stroke;
 }
 
 class _WeekStrip extends StatelessWidget {
