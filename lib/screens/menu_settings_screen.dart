@@ -15,7 +15,7 @@ class MenuSettingsScreen extends StatefulWidget {
 
 class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
   final _prefs = MenuPrefs.instance;
-  final _api = MealizeApi();
+  final _api = MealizeApi.instance;
   bool _generating = false;
 
   Future<void> _generate() async {

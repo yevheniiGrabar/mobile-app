@@ -272,7 +272,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
           onPressed: () {
             DiaryStore.instance.add(DiaryEntry(m.title, _grams, kcal, p, f, c));
             // Подія для аналітики (fire-and-forget, не блокує UI).
-            MealizeApi().logFood(title: m.title, kcal: kcal, grams: _grams, protein: p, fat: f, carbs: c)
+            MealizeApi.instance.logFood(title: m.title, kcal: kcal, grams: _grams, protein: p, fat: f, carbs: c)
                 .catchError((_) {});
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('Записано в щоденник: $_grams г · $kcal ккал ✓'), duration: const Duration(seconds: 2)));

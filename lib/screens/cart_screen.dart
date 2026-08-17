@@ -18,7 +18,7 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final _checked = <String>{}; // ключі куплених позицій
-  final _api = MealizeApi();
+  final _api = MealizeApi.instance;
   bool _busy = false;
 
   String _key(String dept, int i) => '$dept#$i';

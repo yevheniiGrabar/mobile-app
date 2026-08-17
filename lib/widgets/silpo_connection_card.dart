@@ -12,7 +12,7 @@ class SilpoConnectionCard extends StatefulWidget {
 }
 
 class _SilpoConnectionCardState extends State<SilpoConnectionCard> {
-  final _api = MealizeApi();
+  final _api = MealizeApi.instance;
   bool _loading = true;
   bool _backendOnline = false;
   bool _silpoConnected = false;
@@ -28,6 +28,7 @@ class _SilpoConnectionCardState extends State<SilpoConnectionCard> {
     setState(() => _loading = true);
     try {
       final me = await _api.me();
+      if (!mounted) return;
       setState(() {
         _backendOnline = true;
         _silpoConnected = me['silpo_connected'] == true;
@@ -35,6 +36,7 @@ class _SilpoConnectionCardState extends State<SilpoConnectionCard> {
         _loading = false;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _backendOnline = false;
         _loading = false;

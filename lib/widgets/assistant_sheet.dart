@@ -30,7 +30,7 @@ class _AssistantSheet extends StatefulWidget {
 }
 
 class _AssistantSheetState extends State<_AssistantSheet> {
-  final _api = MealizeApi();
+  final _api = MealizeApi.instance;
   final _input = TextEditingController();
   final _scroll = ScrollController();
   final _stt = SpeechToText();
@@ -79,10 +79,13 @@ class _AssistantSheetState extends State<_AssistantSheet> {
     _scrollDown();
     try {
       final reply = await _api.assistant(msg);
+      if (!mounted) return;
       setState(() => _messages.add(_Msg(reply.isEmpty ? 'Вибач, не зрозуміла.' : reply, false)));
     } on ApiException catch (e) {
+      if (!mounted) return;
       setState(() => _messages.add(_Msg('Зоряна недоступна: ${e.message}', false)));
     } catch (_) {
+      if (!mounted) return;
       setState(() => _messages.add(const _Msg('Бекенд недоступний. Перевір, що сервер запущено.', false)));
     } finally {
       if (mounted) setState(() => _sending = false);

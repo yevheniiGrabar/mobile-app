@@ -13,7 +13,7 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  final _api = MealizeApi();
+  final _api = MealizeApi.instance;
   AnalyticsData? _data;
   String? _error;
   bool _loading = true;
