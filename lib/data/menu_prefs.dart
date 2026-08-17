@@ -10,6 +10,15 @@ class MenuPrefs extends ChangeNotifier {
   int people = 2;
   String dietStyle = 'pp';
 
+  /// Режим генерації: 'economy' (ціна — акції/найдешевше) або 'quality' (склад/кращі товари).
+  String mode = 'economy';
+
+  /// Дозволене перевищення бюджету у % (лише для 'quality'). 0 = суворо в межах.
+  int flexPct = 0;
+
+  /// Додаткова сума понад базовий бюджет (₴) від flexPct.
+  int get flexAmount => (budget * flexPct / 100).round();
+
   final Set<String> prefs = {'ПП'};
   final Set<String> allergies = {};
   final Set<String> equipment = {'Плита', 'Духовка'};

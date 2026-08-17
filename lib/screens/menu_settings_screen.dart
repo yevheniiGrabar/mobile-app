@@ -25,7 +25,8 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
     try {
       final result = await _api.generateAndWait({
         'budget': _prefs.budget.round(),
-        'mode': 'economy',
+        'mode': _prefs.mode,
+        'budget_flex_pct': _prefs.flexPct,
         'people': _prefs.people,
         'diet_style': _prefs.diet,
         'appliances': _prefs.equipment.toList(),
@@ -86,7 +87,9 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
         _card(child: Row(children: [
           const Icon(CupertinoIcons.info_circle, size: 18, color: AppColors.muted),
           const SizedBox(width: 10),
-          Expanded(child: Text('Осіб: ${_prefs.people} · раціон: ${_prefs.filtersCount} фільтрів. Змінити — у Профілі.',
+          Expanded(child: Text(
+            'Режим: ${_prefs.mode == 'quality' ? 'Якість${_prefs.flexPct > 0 ? ' +${_prefs.flexPct}%' : ''}' : 'Ціна'}'
+            ' · осіб: ${_prefs.people} · раціон: ${_prefs.filtersCount}. Змінити — у Профілі.',
             style: const TextStyle(fontSize: 12.5, color: AppColors.muted))),
         ])),
         const SizedBox(height: 4),
