@@ -6,6 +6,7 @@ import '../models.dart';
 import '../data/stores.dart';
 import '../data/api/mealize_api.dart';
 import '../data/plan_store.dart';
+import '../data/menu_prefs.dart';
 
 /// Список покупок (Stitch): згруповано по відділах, картки з чекбоксами,
 /// куплене — закреслено. Зверху — доказова економія (проти звичайних цін).
@@ -32,7 +33,7 @@ class _CartScreenState extends State<CartScreen> {
       if (planId != null) {
         id = planId;
       } else {
-        final gen = await _api.generateAndWait({'budget': 5000, 'mode': 'economy'});
+        final gen = await _api.generateAndWait(MenuPrefs.instance.toRequestBody());
         final data = gen['data'] as Map<String, dynamic>?;
         if (data?['status'] != 'ready') {
           final err = (data?['error'] ?? '').toString();

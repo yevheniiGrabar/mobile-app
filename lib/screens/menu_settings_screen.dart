@@ -23,17 +23,7 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
     String title = 'Готово';
     String msg = '';
     try {
-      final result = await _api.generateAndWait({
-        'budget': _prefs.budget.round(),
-        'mode': _prefs.mode,
-        'budget_flex_pct': _prefs.flexPct,
-        'people': _prefs.people,
-        'diet_system': _prefs.dietSystem,
-        'cuisines': _prefs.cuisines.toList(),
-        'health_filters': _prefs.healthFilters.toList(),
-        'appliances': _prefs.equipment.toList(),
-        'allergies': _prefs.allergies.toList(),
-      });
+      final result = await _api.generateAndWait(_prefs.toRequestBody());
       final data = result['data'] as Map<String, dynamic>?;
       if (data?['status'] == 'ready') {
         PlanStore.instance.setFromPlan(data!);

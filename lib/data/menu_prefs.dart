@@ -60,5 +60,18 @@ class MenuPrefs extends ChangeNotifier {
       cuisines.length + healthFilters.length + allergies.length +
       (dietSystem != 'omnivore' ? 1 : 0);
 
+  /// Єдине тіло запиту генерації — для «Скласти меню» і для checkout.
+  Map<String, dynamic> toRequestBody() => {
+        'budget': budget.round(),
+        'mode': mode,
+        'budget_flex_pct': flexPct,
+        'people': people,
+        'diet_system': dietSystem,
+        'cuisines': cuisines.toList(),
+        'health_filters': healthFilters.toList(),
+        'appliances': equipment.toList(),
+        'allergies': allergies.toList(),
+      };
+
   void notify() => notifyListeners();
 }
