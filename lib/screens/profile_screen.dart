@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
-import '../data/stores.dart';
 import '../data/diary.dart';
 import '../data/menu_prefs.dart';
 import '../widgets/silpo_connection_card.dart';
@@ -10,18 +9,15 @@ import 'analytics_screen.dart';
 import 'budget_screen.dart';
 import 'family_screen.dart';
 import 'diet_screen.dart';
-import 'menu_settings_screen.dart';
 import 'subscription_screen.dart';
 
-/// Профіль (Stitch): акаунт + групи налаштувань.
-/// «Налаштування меню» (бюджет/раціон/магазин) відкривається під-екраном.
+/// Профіль: акаунт + групи налаштувань (кожна настройка — в одному місці).
+/// Генерація меню — кнопкою на Головній.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final store = StoreRegistry.instance.active.info;
-
     return CupertinoPageScaffold(
       backgroundColor: AppColors.bg,
       child: CustomScrollView(slivers: [
@@ -51,7 +47,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _group('ЗАМОВЛЕННЯ', [
-            _row(context, Icons.storefront_outlined, 'Магазин та ринок', store.name, () => _openSettings(context)),
+            // «Магазин та ринок» приховано — поки лише Сільпо (ринки US/EU — після хакатону).
             _row(context, Icons.location_on_outlined, 'Адреси доставки', '2', () => _soon(context)),
             _row(context, Icons.credit_card, 'Спосіб оплати', 'Apple Pay', () => _soon(context)),
             _row(context, Icons.history, 'Історія замовлень', '14', () => _soon(context)),
@@ -69,13 +65,11 @@ class ProfileScreen extends StatelessWidget {
     ]));
   }
 
-  void _openSettings(BuildContext c) =>
-      Navigator.of(c).push(MaterialPageRoute(builder: (_) => const MenuSettingsScreen()));
   void _soon(BuildContext c) => ScaffoldMessenger.of(c).showSnackBar(
       const SnackBar(content: Text('Розділ у розробці'), duration: Duration(seconds: 2)));
 
   Widget _accountCard(BuildContext context) => GestureDetector(
-    onTap: () => _openSettings(context),
+    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FamilyScreen())),
     child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),

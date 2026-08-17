@@ -6,6 +6,7 @@ import '../models.dart';
 import '../data/diary.dart';
 import '../data/menu_prefs.dart';
 import '../data/plan_store.dart';
+import '../data/api/mealize_api.dart';
 import '../widgets/meal_card.dart';
 import 'subscription_screen.dart';
 import 'diary_screen.dart';
@@ -23,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _dates = [23, 24, 25, 26, 27, 28, 29];
   static const _todayIndex = 0; // сьогодні = Понеділок (демо-дані)
   int _selected = 0;
+  bool _generating = false;
 
   @override
   void initState() {
@@ -78,6 +80,18 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_, _) => _BudgetCard(spent: spent, limit: MenuPrefs.instance.budget.round(), daysLeft: daysLeft),
         ),
       )),
+      // Головна дія застосунку — скласти/перескласти меню на тиждень.
+      SliverToBoxAdapter(child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+        child: SizedBox(width: double.infinity, child: CupertinoButton(
+          color: AppColors.accent, borderRadius: BorderRadius.circular(14),
+          onPressed: _generating ? null : _openGenerateSheet,
+          child: _generating
+              ? const CupertinoActivityIndicator(color: AppColors.accentInk)
+              : Text(PlanStore.instance.hasMenu ? 'Перескласти меню на тиждень' : 'Скласти меню на тиждень',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.accentInk)),
+        )),
+      )),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
         child: AnimatedBuilder(
@@ -127,6 +141,61 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _dayNameFull(int i) => const ['Понеділок','Вівторок','Середа','Четвер','П\'ятниця','Субота','Неділя'][i.clamp(0, 6)];
+
+  /// Сводка налаштувань + підтвердження перед генерацією (нативний Cupertino-діалог).
+  void _openGenerateSheet() {
+    final p = MenuPrefs.instance;
+    final mode = p.mode == 'quality' ? 'Якість${p.flexPct > 0 ? ' +${p.flexPct}%' : ''}' : 'Ціна';
+    final summary = 'Бюджет: ${p.budget.round()} ₴/тиждень · $mode\n'
+        'Раціон: ${p.dietSystemLabel}${p.filtersCount > 0 ? ' · ${p.filtersCount} фільтрів' : ''}\n'
+        'Осіб: ${p.people}\n\nЗмінити — у Профілі.';
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (c) => CupertinoAlertDialog(
+        title: const Text('Скласти меню на тиждень'),
+        content: Text('\n$summary'),
+        actions: [
+          CupertinoDialogAction(onPressed: () => Navigator.of(c).pop(), child: const Text('Скасувати')),
+          CupertinoDialogAction(isDefaultAction: true,
+            onPressed: () { Navigator.of(c).pop(); _generate(); }, child: const Text('Скласти')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _generate() async {
+    setState(() => _generating = true);
+    String title = 'Готово';
+    String msg = '';
+    try {
+      final result = await MealizeApi.instance.generateAndWait(MenuPrefs.instance.toRequestBody());
+      final data = result['data'] as Map<String, dynamic>?;
+      if (data?['status'] == 'ready') {
+        PlanStore.instance.setFromPlan(data!);
+        msg = 'Меню на тиждень готове 🎉\nЕкономія ${data['savings'] ?? 0} ₴. Дивись нижче та у вкладці «Список».';
+      } else {
+        final err = (data?['error'] ?? '').toString();
+        title = 'Не вдалося';
+        msg = err.contains('401')
+            ? 'Спочатку підключи Сільпо: Профіль → «Підключити Сільпо».'
+            : 'Помилка генерації: ${err.isEmpty ? "невідома" : err}';
+      }
+    } on ApiException catch (e) {
+      title = 'Не вдалося';
+      msg = 'Бекенд: ${e.message}';
+    } catch (_) {
+      title = 'Бекенд недоступний';
+      msg = 'Сервер не відповідає. Запусти BFF і спробуй ще раз.';
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+    if (mounted) {
+      showCupertinoDialog<void>(context: context, builder: (c) => CupertinoAlertDialog(
+        title: Text(title), content: Text('\n$msg'),
+        actions: [CupertinoDialogAction(isDefaultAction: true, onPressed: () => Navigator.of(c).pop(), child: const Text('OK'))],
+      ));
+    }
+  }
 }
 
 class _EmptyDay extends StatelessWidget {
