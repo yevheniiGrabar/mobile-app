@@ -64,6 +64,43 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
+  /// Горизонт списку: перезбирає кошик на N перших днів тижня.
+  Future<void> _setDays(int planId, int days) async {
+    setState(() => _busy = true);
+    try {
+      final data = await _api.setShoppingDays(planId, days);
+      if (data != null) PlanStore.instance.setFromPlan(data);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Widget _daysSelector(PlanStore plan) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+    child: Row(children: [
+      const Text('Список на:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
+      const SizedBox(width: 10),
+      for (final d in [2, 3, 7])
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: _busy ? null : () => _setDays(plan.id!, d),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: plan.shoppingDays == d ? AppColors.accent : AppColors.surface2,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: plan.shoppingDays == d ? AppColors.accent : AppColors.line)),
+              child: Text(d == 7 ? 'тиждень' : '$d дні',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
+                  color: plan.shoppingDays == d ? AppColors.accentInk : AppColors.text)),
+            ),
+          ),
+        ),
+    ]),
+  );
+
   /// Записати покупку в історію аналітики з поточного плану (не блокує UI).
   void _recordPurchase(int planId) {
     final plan = PlanStore.instance;
@@ -117,6 +154,7 @@ class _CartScreenState extends State<CartScreen> {
         )),
         if (saved > 0) SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 4), child: _savingsCard(regular, pay, saved, pct))),
+        SliverToBoxAdapter(child: _daysSelector(plan)),
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
           child: Row(children: [

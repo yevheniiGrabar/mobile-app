@@ -55,6 +55,12 @@ class MealizeApi {
   Future<Map<String, dynamic>> swap(int planId, int itemId, String sku) async =>
       _decode(await _post('/meal-plans/$planId/items/$itemId/swap', {'sku': sku}));
 
+  /// POST /api/meal-plans/{id}/shopping-days — перезібрати список на N днів.
+  Future<Map<String, dynamic>?> setShoppingDays(int planId, int days) async {
+    final json = _decode(await _post('/meal-plans/$planId/shopping-days', {'days': days}));
+    return json['data'] as Map<String, dynamic>?;
+  }
+
   /// POST /api/meal-plans/{id}/checkout — checkout-лінк Сільпо.
   Future<Map<String, dynamic>> checkout(int planId) async =>
       _decode(await _post('/meal-plans/$planId/checkout'));

@@ -39,6 +39,7 @@ class PlanStore extends ChangeNotifier {
 
   int? id;
   int? naiveTotal, optimizedTotal, savings;
+  int shoppingDays = 7; // горизонт списку покупок (днів)
   List<PlanItem> items = [];
   List<DayMenu> days = []; // згенероване меню на тиждень (для карток на Головній)
 
@@ -51,6 +52,7 @@ class PlanStore extends ChangeNotifier {
     naiveTotal = data['naive_total'] as int?;
     optimizedTotal = data['optimized_total'] as int?;
     savings = data['savings'] as int?;
+    shoppingDays = (data['shopping_days'] as num?)?.toInt() ?? 7;
     items = ((data['items'] as List?) ?? const [])
         .map((e) => PlanItem.fromJson((e as Map).cast<String, dynamic>()))
         .toList();
