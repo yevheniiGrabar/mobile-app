@@ -21,6 +21,7 @@ class Meal {
   final int kcal;
   final int price; // грн
   final String img; // ключове слово для фото страви
+  final String? photoHint; // опис вигляду готової страви від агента (для точнішого фото)
   final List<Ingredient> ingredients;
   final List<String> steps; // кроки приготування (для екрана рецепта)
   final int kcalPer100;     // калорійність на 100 г (для розрахунку порції)
@@ -32,6 +33,7 @@ class Meal {
     required this.kcal,
     required this.price,
     required this.img,
+    this.photoHint,
     this.ingredients = const [],
     this.steps = const [],
     this.kcalPer100 = 120,
@@ -62,11 +64,19 @@ class Meal {
   String get assetImage => 'assets/dishes/$slug.jpg';
 
   /// Мережевий фолбек (AI-генерація за назвою) — для довільних майбутніх страв.
+  /// Seed по slug → одна страва завжди дає те саме фото (консистентність + кеш
+  /// на боці Pollinations). photo_hint від агента робить фото точнішим.
   String get imageUrl {
-    final seed = title.hashCode.abs() % 1000000;
-    final prompt = '$img, ukrainian home-cooked meal, professional food photography, '
-        'appetizing, plated, natural light, top-down';
-    return 'https://image.pollinations.ai/prompt/${Uri.encodeComponent(prompt)}?width=400&height=400&nologo=true&seed=$seed';
+    final seed = slug.hashCode.abs() % 1000000;
+    final subject = (photoHint != null && photoHint!.trim().isNotEmpty)
+        ? photoHint!.trim()
+        : '$title, $img';
+    final prompt = '$subject, українська домашня страва, professional food photography, '
+        'appetizing, freshly plated on a ceramic plate, natural soft light, '
+        'shallow depth of field, top-down, high detail, no text, no watermark';
+    final q = Uri.encodeComponent(prompt);
+    return 'https://image.pollinations.ai/prompt/$q'
+        '?width=400&height=400&nologo=true&seed=$seed&model=flux&enhance=true';
   }
 }
 
