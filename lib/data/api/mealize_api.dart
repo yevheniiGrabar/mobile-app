@@ -89,8 +89,12 @@ class MealizeApi {
   }
 
   /// POST /api/assistant — повідомлення до Зоряни (Claude) → текстова відповідь.
-  Future<String> assistant(String message) async {
-    final json = _decode(await _post('/assistant', {'message': message}));
+  /// history — останні репліки [{role:user|assistant, text}] для пам'яті діалогу.
+  Future<String> assistant(String message, {List<Map<String, String>> history = const []}) async {
+    final json = _decode(await _post('/assistant', {
+      'message': message,
+      if (history.isNotEmpty) 'history': history,
+    }));
     return (json['reply'] ?? '').toString();
   }
 

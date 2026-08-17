@@ -41,10 +41,10 @@ class _AssistantSheetState extends State<_AssistantSheet> {
   bool _listening = false;
 
   static const _suggestions = [
-    'Склади меню на тиждень на 2000 грн',
-    'Порахуй калорії цього обіду',
-    'Заміни вечерю на щось дешевше',
-    'Додай масло в список покупок',
+    'Ідеї бюджетних вечер на тиждень',
+    'Скільки калорій орієнтовно в борщі?',
+    'Чим замінити мʼясо у вегетаріанському меню?',
+    'Як користуватись «Скласти меню»?',
   ];
 
   @override
@@ -72,13 +72,17 @@ class _AssistantSheetState extends State<_AssistantSheet> {
     final msg = text.trim();
     if (msg.isEmpty || _sending) return;
     _input.clear();
+    // Історія діалогу (до поточної репліки) для пам'яті Зоряни.
+    final history = _messages
+        .map((m) => {'role': m.fromUser ? 'user' : 'assistant', 'text': m.text})
+        .toList();
     setState(() {
       _messages.add(_Msg(msg, true));
       _sending = true;
     });
     _scrollDown();
     try {
-      final reply = await _api.assistant(msg);
+      final reply = await _api.assistant(msg, history: history);
       if (!mounted) return;
       setState(() => _messages.add(_Msg(reply.isEmpty ? 'Вибач, не зрозуміла.' : reply, false)));
     } on ApiException catch (e) {
