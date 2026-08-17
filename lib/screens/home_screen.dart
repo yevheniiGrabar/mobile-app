@@ -317,27 +317,58 @@ class _RingsPainter extends CustomPainter {
     for (int i = 0; i < rings.length; i++) {
       final radius = rOuter - i * (stroke + gap);
       if (radius <= 0) continue;
+      final ring = rings[i];
       final isActive = i == active;
       final dim = active != null && !isActive;
       final w = isActive ? stroke + stroke * 0.55 * pop : stroke; // активне кільце товщає
       final rect = Rect.fromCircle(center: c, radius: radius);
+      const start = -math.pi / 2;
+
       // Доріжка (фон кільця).
       canvas.drawArc(rect, 0, 2 * math.pi, false, Paint()
         ..style = PaintingStyle.stroke..strokeWidth = w..strokeCap = StrokeCap.round
-        ..color = rings[i].color.withValues(alpha: isActive ? 0.22 : 0.15));
-      final sweep = 2 * math.pi * rings[i].pct.clamp(0.0, 1.0) * fillT;
+        ..color = ring.color.withValues(alpha: isActive ? 0.22 : 0.15));
+
+      final sweep = 2 * math.pi * ring.pct.clamp(0.0, 2.0) * fillT; // до 200% → другий круг
       if (sweep <= 0) continue;
-      // Свічення під активним кільцем.
+      final over = sweep > 2 * math.pi;
+      final fg = dim ? ring.color.withValues(alpha: 0.45) : ring.color;
+
+      // Аура під активним кільцем.
       if (isActive && pop > 0) {
-        canvas.drawArc(rect, -math.pi / 2, sweep, false, Paint()
+        canvas.drawArc(rect, start, over ? 2 * math.pi : sweep, false, Paint()
           ..style = PaintingStyle.stroke..strokeWidth = w..strokeCap = StrokeCap.round
-          ..color = rings[i].color.withValues(alpha: 0.35 * pop)
+          ..color = ring.color.withValues(alpha: 0.35 * pop)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6 * pop));
       }
-      // Прогрес (неактивні трохи приглушені).
-      canvas.drawArc(rect, -math.pi / 2, sweep, false, Paint()
-        ..style = PaintingStyle.stroke..strokeWidth = w..strokeCap = StrokeCap.round
-        ..color = dim ? rings[i].color.withValues(alpha: 0.45) : rings[i].color);
+
+      final fgPaint = Paint()
+        ..style = PaintingStyle.stroke..strokeWidth = w..strokeCap = StrokeCap.round..color = fg;
+      if (over) {
+        // Перше коло заповнене повністю…
+        canvas.drawArc(rect, start, 2 * math.pi, false, fgPaint);
+        final extra = sweep - 2 * math.pi; // …і надлишок понад 100% зверху.
+        final leadAngle = start + extra;
+        final tip = Offset(c.dx + radius * math.cos(leadAngle), c.dy + radius * math.sin(leadAngle));
+        // Тінь від кінчика, що лягає на «хвіст» (глибина, як у Apple Watch).
+        canvas.drawCircle(tip, w * 0.72, Paint()
+          ..color = const Color(0xFF000000).withValues(alpha: 0.20)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.5));
+        canvas.drawArc(rect, start, extra, false, fgPaint);
+      } else {
+        canvas.drawArc(rect, start, sweep, false, fgPaint);
+      }
+
+      // Свічення на кінчику дуги.
+      if (!dim) {
+        final leadAngle = start + sweep;
+        final tip = Offset(c.dx + radius * math.cos(leadAngle), c.dy + radius * math.sin(leadAngle));
+        canvas.drawCircle(tip, w * 0.95, Paint()
+          ..color = ring.color.withValues(alpha: isActive ? 0.70 : 0.50)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.7));
+        canvas.drawCircle(tip, w * 0.22, Paint()
+          ..color = Color.lerp(ring.color, const Color(0xFFFFFFFF), 0.55)!);
+      }
     }
   }
 
