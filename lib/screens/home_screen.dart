@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../data/diary.dart';
+import '../data/menu_prefs.dart';
 import '../widgets/meal_card.dart';
 import 'subscription_screen.dart';
 import 'diary_screen.dart';
@@ -52,7 +53,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-        child: _BudgetCard(spent: spent, limit: 2000, daysLeft: daysLeft),
+        child: AnimatedBuilder(
+          animation: MenuPrefs.instance,
+          builder: (_, _) => _BudgetCard(spent: spent, limit: MenuPrefs.instance.budget.round(), daysLeft: daysLeft),
+        ),
       )),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),

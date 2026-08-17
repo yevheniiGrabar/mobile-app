@@ -8,6 +8,7 @@ import '../data/menu_prefs.dart';
 import '../widgets/silpo_connection_card.dart';
 import 'calorie_goal_screen.dart';
 import 'analytics_screen.dart';
+import 'budget_screen.dart';
 import 'family_screen.dart';
 import 'diet_screen.dart';
 import 'menu_settings_screen.dart';
@@ -41,16 +42,21 @@ class ProfileScreen extends StatelessWidget {
           const SilpoConnectionCard(),
           _statsCard(totalKcal, totalSpend),
           const SizedBox(height: 20),
-          _group('НАЛАШТУВАННЯ', [
-            _row(context, Icons.insights, 'Аналітика', '',
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnalyticsScreen()))),
-            _row(context, Icons.track_changes, 'Цілі калорій', '${DiaryStore.goalKcal} ккал',
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CalorieGoalScreen()))),
-            _row(context, Icons.groups_outlined, 'Склад сім\'ї', '${MenuPrefs.instance.people} ос.',
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FamilyScreen()))),
-            _row(context, Icons.eco_outlined, 'Раціон і алергії', '${MenuPrefs.instance.filtersCount} фільтри',
-              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DietScreen()))),
-          ]),
+          AnimatedBuilder(
+            animation: MenuPrefs.instance,
+            builder: (_, _) => _group('НАЛАШТУВАННЯ', [
+              _row(context, Icons.insights, 'Аналітика', '',
+                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnalyticsScreen()))),
+              _row(context, Icons.track_changes, 'Цілі калорій', '${DiaryStore.goalKcal} ккал',
+                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CalorieGoalScreen()))),
+              _row(context, Icons.account_balance_wallet_outlined, 'Тижневий бюджет', '${MenuPrefs.instance.budget.round()} ₴',
+                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BudgetScreen()))),
+              _row(context, Icons.groups_outlined, 'Склад сім\'ї', '${MenuPrefs.instance.people} ос.',
+                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FamilyScreen()))),
+              _row(context, Icons.eco_outlined, 'Раціон і алергії', '${MenuPrefs.instance.filtersCount} фільтри',
+                () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DietScreen()))),
+            ]),
+          ),
           const SizedBox(height: 16),
           _group('ЗАМОВЛЕННЯ', [
             _row(context, Icons.storefront_outlined, 'Магазин та ринок', store.name, () => _openSettings(context)),
