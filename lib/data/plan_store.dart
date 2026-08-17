@@ -100,9 +100,10 @@ class PlanStore extends ChangeNotifier {
           equipment: '',
           minutes: (m['cook_minutes'] as num?)?.toInt() ?? 0,
           kcal: (m['kcal'] as num?)?.toInt() ?? 0,
-          price: 0,
+          price: (m['price'] as num?)?.toInt() ?? 0,
           img: '',
           photoHint: m['photo_hint']?.toString(),
+          note: m['note']?.toString(),
           ingredients: ings,
         ));
       }

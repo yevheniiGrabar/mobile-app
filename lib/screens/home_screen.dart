@@ -8,9 +8,7 @@ import '../data/menu_prefs.dart';
 import '../data/plan_store.dart';
 import '../data/api/mealize_api.dart';
 import '../widgets/meal_card.dart';
-import 'subscription_screen.dart';
 import 'diary_screen.dart';
-import 'recipes_screen.dart';
 
 /// Головна (Stitch): бюджет → КБЖУ → «Цей тиждень» → «Меню на сьогодні».
 class HomeScreen extends StatefulWidget {
@@ -56,23 +54,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return CupertinoPageScaffold(
       backgroundColor: AppColors.bg,
       child: CustomScrollView(slivers: [
-      CupertinoSliverNavigationBar(
-        backgroundColor: AppColors.bg,
-        border: null,
-        largeTitle: const Text('Mealize'),
-        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RecipesScreen())),
-            child: const Icon(CupertinoIcons.square_grid_2x2, color: AppColors.accent, size: 24),
-          ),
-          const SizedBox(width: 16),
-          GestureDetector(
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => const SubscriptionScreen(), fullscreenDialog: true)),
-            child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accent, size: 26),
-          ),
-        ]),
-      ),
+      // Календар тижня (мінімал: пігулка на вибраному дні) — над бюджетом.
+      SliverToBoxAdapter(child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+        child: _WeekStrip(
+          days: _days, dates: _dates, selected: _selected, today: _todayIndex,
+          hasPlan: (i) => i < week.length && week[i].meals.isNotEmpty,
+          onTap: (i) => setState(() => _selected = i),
+        ),
+      )),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
         child: AnimatedBuilder(
@@ -117,11 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
           const Text('Цей тиждень', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           Text('Усього: $spent ₴', style: const TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
         ]),
-      )),
-      SliverToBoxAdapter(child: _WeekStrip(
-        days: _days, dates: _dates, selected: _selected, today: _todayIndex,
-        hasPlan: (i) => i < week.length && week[i].meals.isNotEmpty,
-        onTap: (i) => setState(() => _selected = i),
       )),
       // Меню на сьогодні / на день
       SliverToBoxAdapter(child: Padding(
@@ -487,32 +472,38 @@ class _WeekStrip extends StatelessWidget {
     required this.today, required this.hasPlan, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    return SizedBox(height: 76, child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: days.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 8),
-      itemBuilder: (c, i) {
-        final sel = i == selected;
-        return GestureDetector(
-          onTap: () => onTap(i),
-          child: Container(
-            width: 48,
+    // Мінімал: тиждень на всю ширину, без карток; вибраний день — зелена пігулка.
+    return Row(children: List.generate(days.length, (i) {
+      final sel = i == selected;
+      return Expanded(child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onTap(i),
+        child: Column(children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            margin: const EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
-              color: sel ? AppColors.accent : AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: sel ? AppColors.accent : AppColors.line)),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(days[i], style: TextStyle(fontSize: 11, color: sel ? AppColors.accentInk : AppColors.muted)),
-              const SizedBox(height: 4),
-              Text('${dates[i]}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: sel ? AppColors.accentInk : AppColors.text)),
-              const SizedBox(height: 5),
-              Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle,
-                color: hasPlan(i) ? (sel ? AppColors.accentInk : AppColors.accent) : Colors.transparent)),
+              color: sel ? AppColors.accent : Colors.transparent,
+              borderRadius: BorderRadius.circular(26),
+            ),
+            child: Column(children: [
+              Text(days[i].toUpperCase(), style: TextStyle(
+                fontSize: 11.5, letterSpacing: 0.4, fontWeight: FontWeight.w600,
+                color: sel ? AppColors.accentInk : AppColors.muted)),
+              const SizedBox(height: 6),
+              Text('${dates[i]}', style: TextStyle(
+                fontSize: 17, fontWeight: FontWeight.w700,
+                color: sel ? AppColors.accentInk : AppColors.text)),
             ]),
           ),
-        );
-      },
-    ));
+          const SizedBox(height: 5),
+          // Ненав'язлива крапка — лише для днів із меню (крім вибраного).
+          Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle,
+            color: hasPlan(i) && !sel ? AppColors.accent : Colors.transparent)),
+        ]),
+      ));
+    }));
   }
 }

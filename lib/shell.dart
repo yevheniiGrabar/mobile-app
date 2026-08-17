@@ -6,6 +6,8 @@ import 'screens/diary_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/profile_screen.dart';
 import 'widgets/assistant_sheet.dart';
+import 'widgets/app_menu_drawer.dart';
+import 'widgets/app_mark.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -21,7 +23,31 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: IndexedStack(index: index, children: pages),
+      drawer: const AppMenuDrawer(),
+      body: Column(children: [
+        // Глобальна шапка: зліва «три смужки» (меню), справа значок → на Головну.
+        Builder(builder: (ctx) => SafeArea(bottom: false, child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 6, 16, 4),
+          child: Row(children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Scaffold.of(ctx).openDrawer(),
+              child: const Padding(padding: EdgeInsets.all(6),
+                child: Icon(CupertinoIcons.line_horizontal_3, color: AppColors.text, size: 26)),
+            ),
+            const Spacer(),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => index = 0),
+              child: const AppMark(size: 34),
+            ),
+          ]),
+        ))),
+        Expanded(child: MediaQuery.removePadding(
+          context: context, removeTop: true,
+          child: IndexedStack(index: index, children: pages),
+        )),
+      ]),
       // iOS tab bar: пласка, волосяна лінія зверху, без FAB.
       bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
