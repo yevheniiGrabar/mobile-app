@@ -7,6 +7,7 @@ import '../data/diary.dart';
 import '../data/menu_prefs.dart';
 import '../widgets/silpo_connection_card.dart';
 import 'calorie_goal_screen.dart';
+import 'analytics_screen.dart';
 import 'family_screen.dart';
 import 'diet_screen.dart';
 import 'menu_settings_screen.dart';
@@ -41,6 +42,8 @@ class ProfileScreen extends StatelessWidget {
           _statsCard(totalKcal, totalSpend),
           const SizedBox(height: 20),
           _group('НАЛАШТУВАННЯ', [
+            _row(context, Icons.insights, 'Аналітика', '',
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnalyticsScreen()))),
             _row(context, Icons.track_changes, 'Цілі калорій', '${DiaryStore.goalKcal} ккал',
               () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CalorieGoalScreen()))),
             _row(context, Icons.groups_outlined, 'Склад сім\'ї', '${MenuPrefs.instance.people} ос.',
