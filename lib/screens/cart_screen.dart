@@ -68,13 +68,20 @@ class _CartScreenState extends State<CartScreen> {
     final plan = PlanStore.instance;
     if (!plan.hasPlan) return;
     final total = plan.optimizedTotal ?? plan.items.fold<int>(0, (s, i) => s + i.priceTotal);
+    final saved = plan.items.fold<int>(0, (s, i) => s + i.saved); // сума знижок по позиціях
     _api.recordPurchase(
       total: total,
-      saved: plan.savings ?? 0,
+      saved: saved,
       mealPlanId: planId,
       items: [
         for (final it in plan.items)
-          {'name': it.title.isNotEmpty ? it.title : it.ingredient, 'qty': it.qty, 'price': it.priceTotal},
+          {
+            'name': it.title.isNotEmpty ? it.title : it.ingredient,
+            'qty': it.qty,
+            'price': it.priceTotal,
+            if (it.oldPrice != null) 'old_price': it.oldPrice! * it.qty,
+            'saved': it.saved,
+          },
       ],
     ).catchError((_) {});
   }

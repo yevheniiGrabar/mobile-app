@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 class PlanItem {
   final int id;
   final String ingredient, title, sku;
-  final int qty, price, priceTotal;
+  final int qty, price, priceTotal, saved;
+  final int? oldPrice;
   final bool isPromo, isPrivateLabel;
   const PlanItem(this.id, this.ingredient, this.title, this.sku, this.qty,
-      this.price, this.priceTotal, this.isPromo, this.isPrivateLabel);
+      this.price, this.priceTotal, this.isPromo, this.isPrivateLabel,
+      {this.oldPrice, this.saved = 0});
 
   factory PlanItem.fromJson(Map<String, dynamic> j) => PlanItem(
         (j['id'] ?? 0) as int,
@@ -19,6 +21,8 @@ class PlanItem {
         (j['price_total'] ?? j['price'] ?? 0) as int,
         j['is_promo'] == true,
         j['is_private_label'] == true,
+        oldPrice: (j['old_price'] as num?)?.toInt(),
+        saved: (j['saved'] as num?)?.toInt() ?? 0,
       );
 }
 
