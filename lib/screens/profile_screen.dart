@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
 import '../data/stores.dart';
 import '../data/diary.dart';
@@ -14,20 +13,14 @@ import 'diet_screen.dart';
 import 'menu_settings_screen.dart';
 import 'subscription_screen.dart';
 
-/// Профіль (Stitch): акаунт + статистика тижня + групи налаштувань.
+/// Профіль (Stitch): акаунт + групи налаштувань.
 /// «Налаштування меню» (бюджет/раціон/магазин) відкривається під-екраном.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  // Демо-статистика тижня (підключимо реальні дані пізніше).
-  static const _spend = [216, 264, 204, 230, 260, 240, 190]; // ₴/день
-  static const _dayLabels = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД'];
-
   @override
   Widget build(BuildContext context) {
     final store = StoreRegistry.instance.active.info;
-    final totalSpend = _spend.fold<int>(0, (s, x) => s + x);
-    const totalKcal = 13720;
 
     return CupertinoPageScaffold(
       backgroundColor: AppColors.bg,
@@ -40,7 +33,6 @@ class ProfileScreen extends StatelessWidget {
           _accountCard(context),
           const SizedBox(height: 12),
           const SilpoConnectionCard(),
-          _statsCard(totalKcal, totalSpend),
           const SizedBox(height: 20),
           AnimatedBuilder(
             animation: MenuPrefs.instance,
@@ -103,64 +95,6 @@ class ProfileScreen extends StatelessWidget {
     ),
   );
 
-  Widget _statsCard(int kcal, int spend) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('ТИЖДЕНЬ', style: TextStyle(fontSize: 11, letterSpacing: 1, color: AppColors.muted, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 12),
-      Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          RichText(text: TextSpan(children: [
-            TextSpan(text: _fmt(kcal), style: const TextStyle(color: AppColors.text, fontSize: 22, fontWeight: FontWeight.w900)),
-            const TextSpan(text: '  ккал', style: TextStyle(color: AppColors.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
-          ])),
-          const SizedBox(height: 2),
-          const Text('разом', style: TextStyle(fontSize: 12, color: AppColors.muted)),
-        ])),
-        Container(width: 1, height: 36, color: AppColors.line),
-        const SizedBox(width: 16),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('$spend ₴', style: const TextStyle(color: AppColors.green, fontSize: 22, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 2),
-          const Text('витрати', style: TextStyle(fontSize: 12, color: AppColors.muted)),
-        ]),
-      ]),
-      const SizedBox(height: 18),
-      SizedBox(height: 96, child: _chart()),
-    ]),
-  );
-
-  Widget _chart() {
-    final spots = [for (int i = 0; i < _spend.length; i++) FlSpot(i.toDouble(), _spend[i].toDouble())];
-    final maxY = (_spend.reduce((a, b) => a > b ? a : b) * 1.25);
-    return LineChart(LineChartData(
-      minY: 0, maxY: maxY,
-      gridData: const FlGridData(show: false),
-      borderData: FlBorderData(show: false),
-      titlesData: FlTitlesData(
-        leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 22, interval: 1,
-          getTitlesWidget: (v, m) {
-            final i = v.toInt();
-            if (i < 0 || i >= _dayLabels.length) return const SizedBox.shrink();
-            return Padding(padding: const EdgeInsets.only(top: 6),
-              child: Text(_dayLabels[i], style: const TextStyle(fontSize: 10, color: AppColors.muted)));
-          })),
-      ),
-      lineTouchData: const LineTouchData(enabled: false),
-      lineBarsData: [LineChartBarData(
-        spots: spots, isCurved: true, curveSmoothness: 0.35,
-        color: AppColors.carbs, barWidth: 3, isStrokeCapRound: true,
-        dotData: FlDotData(show: true, getDotPainter: (s, p, b, i) =>
-          FlDotCirclePainter(radius: 3.5, color: AppColors.carbs, strokeWidth: 2, strokeColor: AppColors.surface)),
-        belowBarData: BarAreaData(show: true, color: AppColors.carbs.withValues(alpha: 0.10)),
-      )],
-    ));
-  }
-
   /// Нативна iOS-група (як у Налаштуваннях): inset-grouped список.
   Widget _group(String title, List<Widget> rows) => CupertinoListSection.insetGrouped(
     header: Text(title, style: const TextStyle(fontSize: 12, letterSpacing: 0.3, color: AppColors.muted, fontWeight: FontWeight.w500)),
@@ -182,14 +116,4 @@ class ProfileScreen extends StatelessWidget {
           : null,
       trailing: const CupertinoListTileChevron(),
     );
-
-  String _fmt(int n) {
-    final s = n.toString();
-    final buf = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(' ');
-      buf.write(s[i]);
-    }
-    return buf.toString();
-  }
 }
