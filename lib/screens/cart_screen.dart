@@ -259,6 +259,10 @@ class _CartScreenState extends State<CartScreen> {
             const SizedBox(height: 2),
             Row(children: [
               Text('для: ${it.ingredient}', style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
+              if (it.qty > 1) ...[
+                const SizedBox(width: 6),
+                Text('×${it.qty} уп.', style: const TextStyle(fontSize: 11.5, color: AppColors.text, fontWeight: FontWeight.w700)),
+              ],
               if (it.isPromo) ...[
                 const SizedBox(width: 6),
                 Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
