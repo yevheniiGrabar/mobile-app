@@ -88,14 +88,25 @@ class MealizeApi {
     });
   }
 
-  /// POST /api/assistant — повідомлення до Зоряни (Claude) → текстова відповідь.
-  /// history — останні репліки [{role:user|assistant, text}] для пам'яті діалогу.
-  Future<String> assistant(String message, {List<Map<String, String>> history = const []}) async {
+  /// POST /api/assistant — повідомлення до Зоряни (Claude) → відповідь + planId,
+  /// якщо тул змінив/створив план (для live-refresh меню в застосунку).
+  Future<({String reply, int? planId})> assistant(String message, {List<Map<String, String>> history = const []}) async {
     final json = _decode(await _post('/assistant', {
       'message': message,
       if (history.isNotEmpty) 'history': history,
     }));
-    return (json['reply'] ?? '').toString();
+    return (reply: (json['reply'] ?? '').toString(), planId: (json['plan_id'] as num?)?.toInt());
+  }
+
+  /// Опитати план до ready|failed (для оновлення після дії Зоряни).
+  Future<Map<String, dynamic>?> pollPlan(int id, {int tries = 45}) async {
+    for (var i = 0; i < tries; i++) {
+      final data = (await mealPlan(id))['data'] as Map<String, dynamic>?;
+      final status = data?['status'];
+      if (status == 'ready' || status == 'failed') return data;
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+    }
+    return (await mealPlan(id))['data'] as Map<String, dynamic>?;
   }
 
   /// Згенерувати меню і дочекатися ready|failed (полінг).

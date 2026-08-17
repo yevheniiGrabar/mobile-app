@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../theme.dart';
 import '../data/api/mealize_api.dart';
+import '../data/plan_store.dart';
 
 /// Голосова помічниця «Зоряна» — чат: текст, голос (STT) і чіпи-підказки.
 const assistantName = 'Зоряна';
@@ -82,9 +83,15 @@ class _AssistantSheetState extends State<_AssistantSheet> {
     });
     _scrollDown();
     try {
-      final reply = await _api.assistant(msg, history: history);
+      final res = await _api.assistant(msg, history: history);
       if (!mounted) return;
-      setState(() => _messages.add(_Msg(reply.isEmpty ? 'Вибач, не зрозуміла.' : reply, false)));
+      setState(() => _messages.add(_Msg(res.reply.isEmpty ? 'Вибач, не зрозуміла.' : res.reply, false)));
+      // Live-refresh: Зоряна змінила/створила план → перечитуємо меню у фоні.
+      if (res.planId != null) {
+        _api.pollPlan(res.planId!).then((data) {
+          if (data != null && data['status'] == 'ready') PlanStore.instance.setFromPlan(data);
+        }).catchError((_) {});
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _messages.add(_Msg('Зоряна недоступна: ${e.message}', false)));
