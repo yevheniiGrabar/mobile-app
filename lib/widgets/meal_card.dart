@@ -30,7 +30,8 @@ class MealCard extends StatelessWidget {
             Row(children: [
               _Pill(text: meal.type.toUpperCase(), color: AppColors.surface2, textColor: AppColors.muted),
               const Spacer(),
-              Text('${meal.price} ₴', style: const TextStyle(color: AppColors.green, fontSize: 16, fontWeight: FontWeight.w900)),
+              if (meal.price > 0)
+                Text('${meal.price} ₴', style: const TextStyle(color: AppColors.green, fontSize: 16, fontWeight: FontWeight.w900)),
             ]),
             const SizedBox(height: 6),
             Text(meal.title, maxLines: 2, overflow: TextOverflow.ellipsis,

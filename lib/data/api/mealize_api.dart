@@ -88,7 +88,8 @@ class MealizeApi {
   }
 
   /// Згенерувати меню і дочекатися ready|failed (полінг).
-  Future<Map<String, dynamic>> generateAndWait(Map<String, dynamic> body, {int tries = 12}) async {
+  /// Генерація (агент + матчинг) триває ~30-60с → чекаємо до ~90с.
+  Future<Map<String, dynamic>> generateAndWait(Map<String, dynamic> body, {int tries = 45}) async {
     final created = await createMealPlan(body);
     final id = (created['data']?['id']) as int?;
     if (id == null) return created;
@@ -97,7 +98,7 @@ class MealizeApi {
       final plan = await mealPlan(id);
       final status = plan['data']?['status'];
       if (status == 'ready' || status == 'failed') return plan;
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
     }
     return mealPlan(id);
   }

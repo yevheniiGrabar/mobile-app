@@ -5,6 +5,7 @@ import '../theme.dart';
 import '../models.dart';
 import '../data/diary.dart';
 import '../data/menu_prefs.dart';
+import '../data/plan_store.dart';
 import '../widgets/meal_card.dart';
 import 'subscription_screen.dart';
 import 'diary_screen.dart';
@@ -23,12 +24,31 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _todayIndex = 0; // сьогодні = Понеділок (демо-дані)
   int _selected = 0;
 
-  DayMenu? get _day => _selected < mockWeek.length ? mockWeek[_selected] : null;
+  @override
+  void initState() {
+    super.initState();
+    // Перемалювати, коли меню згенерували на іншому екрані.
+    PlanStore.instance.addListener(_onPlan);
+  }
+
+  @override
+  void dispose() {
+    PlanStore.instance.removeListener(_onPlan);
+    super.dispose();
+  }
+
+  void _onPlan() { if (mounted) setState(() {}); }
+
+  /// Реальне згенероване меню, якщо є; інакше — демо.
+  List<DayMenu> get _week => PlanStore.instance.hasMenu ? PlanStore.instance.days : mockWeek;
 
   @override
   Widget build(BuildContext context) {
-    final d = _day;
-    final spent = mockWeek.fold<int>(0, (s, x) => s + x.total);
+    final week = _week;
+    final d = _selected < week.length ? week[_selected] : null;
+    final spent = PlanStore.instance.hasMenu
+        ? (PlanStore.instance.optimizedTotal ?? 0)
+        : mockWeek.fold<int>(0, (s, x) => s + x.total);
     final daysLeft = (_days.length - _todayIndex - 1).clamp(0, 7);
 
     return CupertinoPageScaffold(
@@ -86,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
       )),
       SliverToBoxAdapter(child: _WeekStrip(
         days: _days, dates: _dates, selected: _selected, today: _todayIndex,
-        hasPlan: (i) => i < mockWeek.length,
+        hasPlan: (i) => i < week.length && week[i].meals.isNotEmpty,
         onTap: (i) => setState(() => _selected = i),
       )),
       // Меню на сьогодні / на день

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../models.dart';
 
 /// Позиція реального кошика (результат генерації BFF: matching + optimizer).
 class PlanItem {
@@ -35,8 +36,10 @@ class PlanStore extends ChangeNotifier {
   int? id;
   int? naiveTotal, optimizedTotal, savings;
   List<PlanItem> items = [];
+  List<DayMenu> days = []; // згенероване меню на тиждень (для карток на Головній)
 
   bool get hasPlan => id != null && items.isNotEmpty;
+  bool get hasMenu => days.isNotEmpty;
 
   /// Заповнити з відповіді GET /api/meal-plans/{id} (data: MealPlanResource).
   void setFromPlan(Map<String, dynamic> data) {
@@ -47,6 +50,7 @@ class PlanStore extends ChangeNotifier {
     items = ((data['items'] as List?) ?? const [])
         .map((e) => PlanItem.fromJson((e as Map).cast<String, dynamic>()))
         .toList();
+    days = _parseMenu(data['menu']);
     notifyListeners();
   }
 
@@ -54,6 +58,50 @@ class PlanStore extends ChangeNotifier {
     id = null;
     naiveTotal = optimizedTotal = savings = null;
     items = [];
+    days = [];
     notifyListeners();
+  }
+
+  static const _weekdays = ['', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П\'ятниця', 'Субота', 'Неділя'];
+  static const _mealType = {'breakfast': 'Сніданок', 'lunch': 'Обід', 'dinner': 'Вечеря'};
+
+  /// menu (plan_json) у список днів з Meal (фото через photo_hint).
+  List<DayMenu> _parseMenu(dynamic menu) {
+    if (menu is! Map) return [];
+    final out = <DayMenu>[];
+    for (final d in (menu['days'] as List?) ?? const []) {
+      if (d is! Map) continue;
+      final wd = (d['weekday'] as num?)?.toInt() ?? 0;
+      final name = (wd >= 1 && wd <= 7) ? _weekdays[wd] : 'День';
+      final meals = <Meal>[];
+      for (final m in (d['meals'] as List?) ?? const []) {
+        if (m is! Map) continue;
+        final ings = <Ingredient>[];
+        for (final ing in (m['ingredients'] as List?) ?? const []) {
+          if (ing is! Map) continue;
+          final qty = ing['qty'];
+          final unit = (ing['unit'] ?? '').toString();
+          ings.add(Ingredient(
+            (ing['name'] ?? '').toString(),
+            '${qty ?? ''} $unit'.trim(),
+            0,
+            (ing['category'] ?? 'Інше').toString(),
+          ));
+        }
+        meals.add(Meal(
+          type: _mealType[(m['type'] ?? '').toString()] ?? 'Страва',
+          title: (m['title'] ?? '').toString(),
+          equipment: '',
+          minutes: (m['cook_minutes'] as num?)?.toInt() ?? 0,
+          kcal: (m['kcal'] as num?)?.toInt() ?? 0,
+          price: 0,
+          img: '',
+          photoHint: m['photo_hint']?.toString(),
+          ingredients: ings,
+        ));
+      }
+      out.add(DayMenu(name, meals));
+    }
+    return out;
   }
 }
