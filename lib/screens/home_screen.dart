@@ -178,16 +178,16 @@ class _NutritionCard extends StatelessWidget {
         const SizedBox(height: 10),
         // Кільця «Активність» (як Apple Watch): вуглеводи → жири → білки.
         _ActivityRings(
-          size: 168, stroke: 15,
+          size: 196, stroke: 13,
           rings: [
             _RingData(carbs / cGoal, AppColors.carbs),   // зовнішнє
             _RingData(fat / fGoal, AppColors.amber),     // середнє
             _RingData(protein / pGoal, AppColors.accent), // внутрішнє
           ],
           center: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('$kcal', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, height: 1)),
-            const Text('ккал', style: TextStyle(fontSize: 11, color: AppColors.muted)),
-            Text('з $kcalGoal', style: const TextStyle(fontSize: 10.5, color: AppColors.muted)),
+            Text('$kcal', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, height: 1.0)),
+            const SizedBox(height: 3),
+            Text('з $kcalGoal ккал', style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600)),
           ]),
         ),
         const SizedBox(height: 16),
