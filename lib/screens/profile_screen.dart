@@ -4,8 +4,11 @@ import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
 import '../data/stores.dart';
 import '../data/diary.dart';
+import '../data/menu_prefs.dart';
 import '../widgets/silpo_connection_card.dart';
 import 'calorie_goal_screen.dart';
+import 'family_screen.dart';
+import 'diet_screen.dart';
 import 'menu_settings_screen.dart';
 import 'subscription_screen.dart';
 
@@ -40,8 +43,10 @@ class ProfileScreen extends StatelessWidget {
           _group('НАЛАШТУВАННЯ', [
             _row(context, Icons.track_changes, 'Цілі калорій', '${DiaryStore.goalKcal} ккал',
               () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CalorieGoalScreen()))),
-            _row(context, Icons.groups_outlined, 'Склад сім\'ї', '2 особи', () => _openSettings(context)),
-            _row(context, Icons.eco_outlined, 'Раціон і алергії', '2 фільтри', () => _openSettings(context)),
+            _row(context, Icons.groups_outlined, 'Склад сім\'ї', '${MenuPrefs.instance.people} ос.',
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FamilyScreen()))),
+            _row(context, Icons.eco_outlined, 'Раціон і алергії', '${MenuPrefs.instance.filtersCount} фільтри',
+              () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DietScreen()))),
           ]),
           const SizedBox(height: 16),
           _group('ЗАМОВЛЕННЯ', [
