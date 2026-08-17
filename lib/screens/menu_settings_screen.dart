@@ -28,7 +28,9 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
         'mode': _prefs.mode,
         'budget_flex_pct': _prefs.flexPct,
         'people': _prefs.people,
-        'diet_style': _prefs.diet,
+        'diet_system': _prefs.dietSystem,
+        'cuisines': _prefs.cuisines.toList(),
+        'health_filters': _prefs.healthFilters.toList(),
         'appliances': _prefs.equipment.toList(),
         'allergies': _prefs.allergies.toList(),
       });
@@ -89,7 +91,7 @@ class _MenuSettingsScreenState extends State<MenuSettingsScreen> {
           const SizedBox(width: 10),
           Expanded(child: Text(
             'Режим: ${_prefs.mode == 'quality' ? 'Якість${_prefs.flexPct > 0 ? ' +${_prefs.flexPct}%' : ''}' : 'Ціна'}'
-            ' · осіб: ${_prefs.people} · раціон: ${_prefs.filtersCount}. Змінити — у Профілі.',
+            ' · ${_prefs.dietSystemLabel} · осіб: ${_prefs.people} · раціон: ${_prefs.filtersCount}. Змінити — у Профілі.',
             style: const TextStyle(fontSize: 12.5, color: AppColors.muted))),
         ])),
         const SizedBox(height: 4),
