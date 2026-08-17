@@ -45,6 +45,7 @@ class _CartScreenState extends State<CartScreen> {
         id = data['id'] as int;
       }
       final co = await _api.checkout(id);
+      _recordPurchase(id); // подія для аналітики (fire-and-forget)
       final link = co['checkout_web'] as String?;
       if (link != null) {
         await launchUrl(Uri.parse(link), webOnlyWindowName: '_blank', mode: LaunchMode.externalApplication);
@@ -60,6 +61,22 @@ class _CartScreenState extends State<CartScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Записати покупку в історію аналітики з поточного плану (не блокує UI).
+  void _recordPurchase(int planId) {
+    final plan = PlanStore.instance;
+    if (!plan.hasPlan) return;
+    final total = plan.optimizedTotal ?? plan.items.fold<int>(0, (s, i) => s + i.priceTotal);
+    _api.recordPurchase(
+      total: total,
+      saved: plan.savings ?? 0,
+      mealPlanId: planId,
+      items: [
+        for (final it in plan.items)
+          {'name': it.title.isNotEmpty ? it.title : it.ingredient, 'qty': it.qty, 'price': it.priceTotal},
+      ],
+    ).catchError((_) {});
   }
 
   @override

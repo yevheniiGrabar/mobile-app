@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../data/diary.dart';
+import '../data/api/mealize_api.dart';
 import '../widgets/dish_image.dart';
 import '../widgets/swap_sheet.dart';
 
@@ -270,6 +271,9 @@ class _RecipeScreenState extends State<RecipeScreen> {
         SizedBox(width: double.infinity, child: FilledButton.icon(
           onPressed: () {
             DiaryStore.instance.add(DiaryEntry(m.title, _grams, kcal, p, f, c));
+            // Подія для аналітики (fire-and-forget, не блокує UI).
+            MealizeApi().logFood(title: m.title, kcal: kcal, grams: _grams, protein: p, fat: f, carbs: c)
+                .catchError((_) {});
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('Записано в щоденник: $_grams г · $kcal ккал ✓'), duration: const Duration(seconds: 2)));
             setState(() {}); // оновити «зʼїдено/лишилось»

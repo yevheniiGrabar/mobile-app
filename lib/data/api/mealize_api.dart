@@ -52,6 +52,35 @@ class MealizeApi {
   Future<Map<String, dynamic>> checkout(int planId) async =>
       _decode(await _http.post(_uri('/meal-plans/$planId/checkout'), headers: _headers));
 
+  /// GET /api/analytics — агрегати для сторінки «Аналітика».
+  Future<Map<String, dynamic>> analytics() async {
+    final json = _decode(await _http.get(_uri('/analytics'), headers: _headers));
+    return (json['data'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+  }
+
+  /// POST /api/food-logs — записати з'їдену порцію (подія щоденника).
+  Future<void> logFood({
+    required String title, required int kcal,
+    int grams = 0, int protein = 0, int fat = 0, int carbs = 0,
+  }) async {
+    await _http.post(_uri('/food-logs'), headers: _headers, body: jsonEncode({
+      'title': title, 'kcal': kcal, 'grams': grams,
+      'protein': protein, 'fat': fat, 'carbs': carbs,
+    }));
+  }
+
+  /// POST /api/purchases — записати подію покупки (замовлення + позиції).
+  Future<void> recordPurchase({
+    required int total, required List<Map<String, dynamic>> items,
+    int saved = 0, String store = 'Сільпо', int? mealPlanId,
+  }) async {
+    await _http.post(_uri('/purchases'), headers: _headers, body: jsonEncode({
+      'store': store, 'total': total, 'saved': saved,
+      'meal_plan_id': ?mealPlanId,
+      'items': items,
+    }));
+  }
+
   /// POST /api/assistant — повідомлення до Зоряни (Claude) → текстова відповідь.
   Future<String> assistant(String message) async {
     final json = _decode(await _http.post(_uri('/assistant'), headers: _headers, body: jsonEncode({'message': message})));
