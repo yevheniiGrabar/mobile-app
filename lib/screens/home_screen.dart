@@ -1,6 +1,6 @@
+import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../theme.dart';
 import '../models.dart';
 import '../data/diary.dart';
@@ -175,46 +175,102 @@ class _NutritionCard extends StatelessWidget {
             ]),
           )),
         ]),
-        const SizedBox(height: 8),
-        SizedBox(width: 150, height: 150, child: Stack(alignment: Alignment.center, children: [
-          PieChart(PieChartData(startDegreeOffset: -90, sectionsSpace: 0, centerSpaceRadius: 56, sections: [
-            PieChartSectionData(value: kcal.toDouble(), color: AppColors.accent, radius: 13, showTitle: false),
-            PieChartSectionData(value: (kcalGoal - kcal).clamp(0, kcalGoal).toDouble() == 0 ? 1 : (kcalGoal - kcal).clamp(0, kcalGoal).toDouble(),
-              color: AppColors.line, radius: 13, showTitle: false),
-          ])),
-          Column(mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 10),
+        // Кільця «Активність» (як Apple Watch): вуглеводи → жири → білки.
+        _ActivityRings(
+          size: 168, stroke: 15,
+          rings: [
+            _RingData(carbs / cGoal, AppColors.carbs),   // зовнішнє
+            _RingData(fat / fGoal, AppColors.amber),     // середнє
+            _RingData(protein / pGoal, AppColors.accent), // внутрішнє
+          ],
+          center: Column(mainAxisSize: MainAxisSize.min, children: [
             Text('$kcal', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, height: 1)),
             const Text('ккал', style: TextStyle(fontSize: 11, color: AppColors.muted)),
             Text('з $kcalGoal', style: const TextStyle(fontSize: 10.5, color: AppColors.muted)),
           ]),
-        ])),
+        ),
         const SizedBox(height: 16),
-        _MacroBar(label: 'Білки', val: protein, goal: pGoal, color: AppColors.accent),
-        const SizedBox(height: 12),
-        _MacroBar(label: 'Жири', val: fat, goal: fGoal, color: AppColors.amber),
-        const SizedBox(height: 12),
-        _MacroBar(label: 'Вуглеводи', val: carbs, goal: cGoal, color: AppColors.carbs),
+        _legendRow('Білки', protein, pGoal, AppColors.accent),
+        _legendRow('Жири', fat, fGoal, AppColors.amber),
+        _legendRow('Вуглеводи', carbs, cGoal, AppColors.carbs),
+      ]),
+    );
+  }
+
+  Widget _legendRow(String label, int val, int goal, Color color) {
+    final pct = ((val / goal) * 100).round();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(children: [
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 9),
+        Text(label, style: const TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
+        const Spacer(),
+        Text('$val / $goal г', style: TextStyle(fontSize: 12.5, color: color, fontWeight: FontWeight.w800)),
+        const SizedBox(width: 6),
+        Text('$pct%', style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600)),
       ]),
     );
   }
 }
 
-class _MacroBar extends StatelessWidget {
-  final String label; final int val, goal; final Color color;
-  const _MacroBar({required this.label, required this.val, required this.goal, required this.color});
+/// Дані одного кільця: відсоток заповнення (0..1+) та колір.
+class _RingData {
+  final double pct; final Color color;
+  const _RingData(this.pct, this.color);
+}
+
+/// Концентричні кільця прогресу в стилі Apple Watch «Активність».
+class _ActivityRings extends StatelessWidget {
+  final double size, stroke;
+  final List<_RingData> rings; // від зовнішнього до внутрішнього
+  final Widget center;
+  const _ActivityRings({required this.size, required this.stroke, required this.rings, required this.center});
   @override
   Widget build(BuildContext context) {
-    final pct = (val / goal).clamp(0.0, 1.0);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
-        Text('$val / $goal г', style: TextStyle(fontSize: 12.5, color: color, fontWeight: FontWeight.w700)),
-      ]),
-      const SizedBox(height: 5),
-      ClipRRect(borderRadius: BorderRadius.circular(6),
-        child: LinearProgressIndicator(value: pct, minHeight: 7, backgroundColor: AppColors.surface2, valueColor: AlwaysStoppedAnimation(color))),
-    ]);
+    return SizedBox(
+      width: size, height: size,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 900),
+        curve: Curves.easeOutCubic,
+        builder: (_, t, _) => CustomPaint(
+          painter: _RingsPainter(rings: rings, stroke: stroke, t: t),
+          child: Center(child: center),
+        ),
+      ),
+    );
   }
+}
+
+class _RingsPainter extends CustomPainter {
+  final List<_RingData> rings; final double stroke, t;
+  _RingsPainter({required this.rings, required this.stroke, required this.t});
+  static const _gap = 6.0;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    for (int i = 0; i < rings.length; i++) {
+      final radius = size.width / 2 - stroke / 2 - i * (stroke + _gap);
+      if (radius <= 0) continue;
+      final rect = Rect.fromCircle(center: c, radius: radius);
+      // Доріжка (фон кільця).
+      canvas.drawArc(rect, 0, 2 * math.pi, false, Paint()
+        ..style = PaintingStyle.stroke..strokeWidth = stroke..strokeCap = StrokeCap.round
+        ..color = rings[i].color.withValues(alpha: 0.15));
+      // Прогрес.
+      final sweep = 2 * math.pi * rings[i].pct.clamp(0.0, 1.0) * t;
+      if (sweep > 0) {
+        canvas.drawArc(rect, -math.pi / 2, sweep, false, Paint()
+          ..style = PaintingStyle.stroke..strokeWidth = stroke..strokeCap = StrokeCap.round
+          ..color = rings[i].color);
+      }
+    }
+  }
+  @override
+  bool shouldRepaint(covariant _RingsPainter old) =>
+      old.t != t || old.stroke != stroke || old.rings != rings;
 }
 
 class _WeekStrip extends StatelessWidget {
