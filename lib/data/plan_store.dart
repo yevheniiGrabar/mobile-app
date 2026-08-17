@@ -7,10 +7,11 @@ class PlanItem {
   final String ingredient, title, sku;
   final int qty, price, priceTotal, saved;
   final int? oldPrice, packSize, leftover;
+  final String? reason;
   final bool isPromo, isPrivateLabel;
   const PlanItem(this.id, this.ingredient, this.title, this.sku, this.qty,
       this.price, this.priceTotal, this.isPromo, this.isPrivateLabel,
-      {this.oldPrice, this.saved = 0, this.packSize, this.leftover});
+      {this.oldPrice, this.saved = 0, this.packSize, this.leftover, this.reason});
 
   factory PlanItem.fromJson(Map<String, dynamic> j) => PlanItem(
         (j['id'] ?? 0) as int,
@@ -26,6 +27,7 @@ class PlanItem {
         saved: (j['saved'] as num?)?.toInt() ?? 0,
         packSize: (j['pack_size'] as num?)?.toInt(),
         leftover: (j['leftover'] as num?)?.toInt(),
+        reason: (j['reason'] as String?),
       );
 }
 
