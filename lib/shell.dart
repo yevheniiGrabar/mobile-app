@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'theme.dart';
 import 'screens/home_screen.dart';
-import 'screens/recipes_screen.dart';
+import 'screens/diary_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/profile_screen.dart';
 import 'widgets/assistant_sheet.dart';
@@ -15,7 +15,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int index = 0;
-  final pages = const [HomeScreen(), RecipesScreen(), CartScreen(), ProfileScreen()];
+  final pages = const [HomeScreen(), DiaryScreen(), CartScreen(), ProfileScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,7 @@ class _MainShellState extends State<MainShell> {
             height: 52,
             child: Row(children: [
               _tab(CupertinoIcons.house_fill, 'Головна', 0),
-              _tab(CupertinoIcons.book_fill, 'Рецепти', 1),
+              _tab(CupertinoIcons.book_fill, 'Щоденник', 1),
               _zoryanaTab(),
               _tab(CupertinoIcons.list_bullet, 'Список', 2),
               _tab(CupertinoIcons.person_fill, 'Профіль', 3),

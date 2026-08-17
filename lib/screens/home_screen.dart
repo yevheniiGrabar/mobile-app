@@ -7,6 +7,7 @@ import '../data/diary.dart';
 import '../widgets/meal_card.dart';
 import 'subscription_screen.dart';
 import 'diary_screen.dart';
+import 'recipes_screen.dart';
 
 /// Головна (Stitch): бюджет → КБЖУ → «Цей тиждень» → «Меню на сьогодні».
 class HomeScreen extends StatefulWidget {
@@ -36,11 +37,18 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.bg,
         border: null,
         largeTitle: const Text('Mealize'),
-        trailing: GestureDetector(
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const SubscriptionScreen(), fullscreenDialog: true)),
-          child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accent, size: 26),
-        ),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RecipesScreen())),
+            child: const Icon(CupertinoIcons.square_grid_2x2, color: AppColors.accent, size: 24),
+          ),
+          const SizedBox(width: 16),
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const SubscriptionScreen(), fullscreenDialog: true)),
+            child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accent, size: 26),
+          ),
+        ]),
       ),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),

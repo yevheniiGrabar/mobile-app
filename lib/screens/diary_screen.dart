@@ -1,33 +1,39 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../data/diary.dart';
 
 /// Щоденник харчування (сьогодні): що зʼїдено + КБЖУ, з можливістю видалити.
+/// Працює і як корінь вкладки (без «назад»), і як пуш із картки на Головній
+/// (CupertinoSliverNavigationBar сам вирішує, чи показувати кнопку «назад»).
 class DiaryScreen extends StatelessWidget {
   const DiaryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: AppColors.bg,
-      appBar: AppBar(backgroundColor: AppColors.bg, elevation: 0, leading: const BackButton(),
-        title: const Text('Щоденник · сьогодні', style: TextStyle(fontWeight: FontWeight.w800))),
-      body: AnimatedBuilder(
-        animation: DiaryStore.instance,
-        builder: (context, _) {
-          final ds = DiaryStore.instance;
-          return ListView(padding: const EdgeInsets.all(16), children: [
-            _summary(ds),
-            const SizedBox(height: 16),
-            if (ds.today.isEmpty)
-              const Padding(padding: EdgeInsets.only(top: 40),
-                child: Center(child: Text('Ще нічого не записано.\nЗапиши порцію з екрана страви.',
-                  textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted))))
-            else
-              ...List.generate(ds.today.length, (i) => _entryRow(context, ds, i)),
-          ]);
-        },
-      ),
+      child: CustomScrollView(slivers: [
+        const CupertinoSliverNavigationBar(
+          backgroundColor: AppColors.bg, border: null, largeTitle: Text('Щоденник')),
+        SliverToBoxAdapter(child: AnimatedBuilder(
+          animation: DiaryStore.instance,
+          builder: (context, _) {
+            final ds = DiaryStore.instance;
+            return Padding(padding: const EdgeInsets.all(16), child: Column(children: [
+              _summary(ds),
+              const SizedBox(height: 16),
+              if (ds.today.isEmpty)
+                const Padding(padding: EdgeInsets.only(top: 40),
+                  child: Center(child: Text('Ще нічого не записано.\nЗапиши порцію з екрана страви.',
+                    textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted))))
+              else
+                ...List.generate(ds.today.length, (i) => _entryRow(context, ds, i)),
+              const SizedBox(height: 90),
+            ]));
+          },
+        )),
+      ]),
     );
   }
 
