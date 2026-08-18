@@ -7,6 +7,7 @@ import '../data/stores.dart';
 import '../data/api/mealize_api.dart';
 import '../data/plan_store.dart';
 import '../data/menu_prefs.dart';
+import '../format.dart';
 
 /// Список покупок (Stitch): згруповано по відділах, картки з чекбоксами,
 /// куплене — закреслено. Зверху — доказова економія (проти звичайних цін).
@@ -51,7 +52,14 @@ class _CartScreenState extends State<CartScreen> {
       if (link != null) {
         await launchUrl(Uri.parse(link), webOnlyWindowName: '_blank', mode: LaunchMode.externalApplication);
       } else {
-        messenger.showSnackBar(const SnackBar(content: Text('Кошик зібрано, але лінку ще немає')));
+        // MCP не віддає checkout-лінк: кошик зібрано в акаунті Сільпо,
+        // оформлення/оплату користувач завершує в застосунку Сільпо.
+        final added = (co['added'] as num?)?.toInt() ?? 0;
+        final total = (co['total'] as num?)?.toDouble();
+        final sum = total != null ? ' на ~${uah(total)} ₴' : '';
+        messenger.showSnackBar(SnackBar(
+          content: Text('✅ Кошик зібрано в Сільпо: $added товарів$sum.\nВідкрий застосунок Сільпо, щоб оформити.'),
+          duration: const Duration(seconds: 5)));
       }
     } on ApiException catch (e) {
       messenger.showSnackBar(SnackBar(
@@ -105,20 +113,20 @@ class _CartScreenState extends State<CartScreen> {
   void _recordPurchase(int planId) {
     final plan = PlanStore.instance;
     if (!plan.hasPlan) return;
-    final total = plan.optimizedTotal ?? plan.items.fold<int>(0, (s, i) => s + i.priceTotal);
-    final saved = plan.items.fold<int>(0, (s, i) => s + i.saved); // сума знижок по позиціях
+    final total = plan.optimizedTotal ?? plan.items.fold<double>(0, (s, i) => s + i.priceTotal);
+    final saved = plan.items.fold<double>(0, (s, i) => s + i.saved); // сума знижок по позиціях
     _api.recordPurchase(
-      total: total,
-      saved: saved,
+      total: total.round(),
+      saved: saved.round(),
       mealPlanId: planId,
       items: [
         for (final it in plan.items)
           {
             'name': it.title.isNotEmpty ? it.title : it.ingredient,
             'qty': it.qty,
-            'price': it.priceTotal,
-            if (it.oldPrice != null) 'old_price': it.oldPrice! * it.qty,
-            'saved': it.saved,
+            'price': it.priceTotal.round(),
+            if (it.oldPrice != null) 'old_price': (it.oldPrice! * it.qty).round(),
+            'saved': it.saved.round(),
           },
       ],
     ).catchError((_) {});
@@ -135,7 +143,7 @@ class _CartScreenState extends State<CartScreen> {
 
   /// Реальний кошик із BFF (після «Скласти меню»): справжні товари + економія.
   Widget _buildReal(BuildContext context, PlanStore plan) {
-    final pay = plan.optimizedTotal ?? plan.items.fold<int>(0, (s, i) => s + i.priceTotal);
+    final pay = plan.optimizedTotal ?? plan.items.fold<double>(0, (s, i) => s + i.priceTotal);
     final regular = plan.naiveTotal ?? pay;
     final saved = plan.savings ?? (regular - pay);
     final pct = regular > 0 ? (saved / regular * 100).round() : 0;
@@ -270,13 +278,13 @@ class _CartScreenState extends State<CartScreen> {
     ]));
   }
 
-  Widget _totalPill(int total) => Container(
+  Widget _totalPill(num total) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
     decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(20)),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       const Icon(CupertinoIcons.cart, size: 16, color: AppColors.accent),
       const SizedBox(width: 6),
-      Text('Разом: $total ₴', style: const TextStyle(color: AppColors.accent, fontSize: 13.5, fontWeight: FontWeight.w800)),
+      Text('Разом: ${uah(total)} ₴', style: const TextStyle(color: AppColors.accent, fontSize: 13.5, fontWeight: FontWeight.w800)),
     ]),
   );
 
@@ -309,7 +317,7 @@ class _CartScreenState extends State<CartScreen> {
                 child: Text('💡 ${it.reason}', style: const TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.w700))),
             ],
           ])),
-          Text('${it.priceTotal} ₴', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+          Text('${uah(it.priceTotal)} ₴', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
             color: done ? AppColors.muted : AppColors.green, decoration: done ? TextDecoration.lineThrough : null)),
         ]),
       ),
@@ -317,7 +325,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   /// Доказова економія: сума + % + порівняння двох кошиків.
-  Widget _savingsCard(int regular, int pay, int saved, int pct) {
+  Widget _savingsCard(num regular, num pay, num saved, int pct) {
     final frac = regular > 0 ? pay / regular : 1.0;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -338,7 +346,7 @@ class _CartScreenState extends State<CartScreen> {
             child: Text('−$pct%', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800))),
         ]),
         const SizedBox(height: 6),
-        Text('−$saved ₴', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: AppColors.accent, height: 1.1)),
+        Text('−${uah(saved)} ₴', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: AppColors.accent, height: 1.1)),
         const SizedBox(height: 14),
         _bar('Звичайна ціна', regular, 1.0, AppColors.line, AppColors.muted, strike: true),
         const SizedBox(height: 8),
@@ -350,7 +358,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _bar(String label, int amount, double frac, Color fill, Color amountColor, {bool strike = false}) {
+  Widget _bar(String label, num amount, double frac, Color fill, Color amountColor, {bool strike = false}) {
     return Row(children: [
       SizedBox(width: 96, child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w600))),
       Expanded(child: Stack(children: [
@@ -359,7 +367,7 @@ class _CartScreenState extends State<CartScreen> {
           child: Container(height: 12, decoration: BoxDecoration(color: fill, borderRadius: BorderRadius.circular(6)))),
       ])),
       const SizedBox(width: 10),
-      Text('$amount ₴', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: amountColor,
+      Text('${uah(amount)} ₴', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: amountColor,
         decoration: strike ? TextDecoration.lineThrough : null)),
     ]);
   }

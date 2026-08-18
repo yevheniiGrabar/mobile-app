@@ -8,6 +8,7 @@ import '../data/menu_prefs.dart';
 import '../data/plan_store.dart';
 import '../data/api/mealize_api.dart';
 import '../widgets/meal_card.dart';
+import '../format.dart';
 import 'diary_screen.dart';
 
 /// Головна (Stitch): бюджет → КБЖУ → «Цей тиждень» → «Меню на сьогодні».
@@ -105,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('Цей тиждень', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-          Text('Усього: $spent ₴', style: const TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
+          Text('Усього: ${uah(spent)} ₴', style: const TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w600)),
         ]),
       )),
       // Меню на сьогодні / на день
@@ -155,9 +156,20 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final result = await MealizeApi.instance.generateAndWait(MenuPrefs.instance.toRequestBody());
       final data = result['data'] as Map<String, dynamic>?;
-      if (data?['status'] == 'ready') {
+      final status = data?['status'];
+      if (status == 'ready') {
         PlanStore.instance.setFromPlan(data!);
-        msg = 'Меню на тиждень готове 🎉\nЕкономія ${data['savings'] ?? 0} ₴. Дивись нижче та у вкладці «Список».';
+        final total = (data['optimized_total'] as num?)?.toInt() ?? 0;
+        final budget = MenuPrefs.instance.budget.round();
+        final within = total <= budget;
+        title = 'Меню готове 🎉';
+        msg = within
+            ? 'Кошик на тиждень: $total ₴ — у межах бюджету ($budget ₴).\nДеталі — у вкладці «Список».'
+            : 'Кошик на тиждень: $total ₴ — це більше за бюджет ($budget ₴).\nЗбав кількість днів у «Список» або підніми бюджет у Профілі.';
+      } else if (status == 'generating' || status == 'pending') {
+        // Ще не дозріло за час полінгу — не помилка.
+        title = 'Ще готуємо';
+        msg = 'Меню генерується довше звичайного. Воно зʼявиться саме за хвилину — можеш поки погортати застосунок.';
       } else {
         final err = (data?['error'] ?? '').toString();
         title = 'Не вдалося';
@@ -203,7 +215,8 @@ class _EmptyDay extends StatelessWidget {
 }
 
 class _BudgetCard extends StatelessWidget {
-  final int spent, limit, daysLeft;
+  final num spent;
+  final int limit, daysLeft;
   const _BudgetCard({required this.spent, required this.limit, required this.daysLeft});
   @override
   Widget build(BuildContext context) {
@@ -217,7 +230,7 @@ class _BudgetCard extends StatelessWidget {
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('Тижневий бюджет', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
           RichText(text: TextSpan(children: [
-            TextSpan(text: '$spent ₴ ', style: const TextStyle(color: AppColors.green, fontSize: 15, fontWeight: FontWeight.w900)),
+            TextSpan(text: '${uah(spent)} ₴ ', style: const TextStyle(color: AppColors.green, fontSize: 15, fontWeight: FontWeight.w900)),
             TextSpan(text: '/ $limit ₴', style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w600)),
           ])),
         ]),
