@@ -18,11 +18,8 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final _checked = <String>{}; // ключі куплених позицій
   final _api = MealizeApi.instance;
   bool _busy = false;
-
-  String _key(String dept, int i) => '$dept#$i';
 
   /// Checkout через BFF. Якщо plan вже згенеровано — оформлюємо його id;
   /// інакше спершу генеруємо (демо), потім checkout → checkoutWebLink.
@@ -72,42 +69,6 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
-  /// Горизонт списку: перезбирає кошик на N перших днів тижня.
-  Future<void> _setDays(int planId, int days) async {
-    setState(() => _busy = true);
-    try {
-      final data = await _api.setShoppingDays(planId, days);
-      if (data != null) PlanStore.instance.setFromPlan(data);
-    } catch (_) {
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Widget _daysSelector(PlanStore plan) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-    child: Row(children: [
-      const Text('Список на:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
-      const SizedBox(width: 10),
-      for (final d in [2, 3, 7])
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: GestureDetector(
-            onTap: _busy ? null : () => _setDays(plan.id!, d),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: plan.shoppingDays == d ? AppColors.accent : AppColors.surface2,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: plan.shoppingDays == d ? AppColors.accent : AppColors.line)),
-              child: Text(d == 7 ? 'тиждень' : '$d дні',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
-                  color: plan.shoppingDays == d ? AppColors.accentInk : AppColors.text)),
-            ),
-          ),
-        ),
-    ]),
-  );
 
   /// Записати покупку в історію аналітики з поточного плану (не блокує UI).
   void _recordPurchase(int planId) {
@@ -162,7 +123,6 @@ class _CartScreenState extends State<CartScreen> {
         )),
         if (saved > 0) SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 4), child: _savingsCard(regular, pay, saved, pct))),
-        SliverToBoxAdapter(child: _daysSelector(plan)),
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
           child: Row(children: [
@@ -227,7 +187,7 @@ class _CartScreenState extends State<CartScreen> {
             ]),
           ),
           const Spacer(),
-          Text('$count позицій · ${_checked.length} куплено', style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          Text('$count позицій', style: const TextStyle(fontSize: 12, color: AppColors.muted)),
         ]),
       )),
       // Картка «доказова економія»
@@ -289,19 +249,14 @@ class _CartScreenState extends State<CartScreen> {
   );
 
   Widget _planItemRow(int i, PlanItem it) {
-    final key = 'plan#$i';
-    final done = _checked.contains(key);
-    return InkWell(
-      onTap: () => setState(() => done ? _checked.remove(key) : _checked.add(key)),
-      child: Padding(
+    return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         child: Row(children: [
-          Icon(done ? Icons.check_circle : Icons.circle_outlined, color: done ? AppColors.accent : AppColors.muted, size: 24),
+          const Icon(CupertinoIcons.cart, color: AppColors.accent, size: 20),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(it.title.isEmpty ? it.ingredient : it.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-                color: done ? AppColors.muted : AppColors.text, decoration: done ? TextDecoration.lineThrough : null)),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text)),
             const SizedBox(height: 2),
             Row(children: [
               Text('для: ${it.ingredient}', style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
@@ -317,10 +272,9 @@ class _CartScreenState extends State<CartScreen> {
                 child: Text('💡 ${it.reason}', style: const TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.w700))),
             ],
           ])),
-          Text('${uah(it.priceTotal)} ₴', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-            color: done ? AppColors.muted : AppColors.green, decoration: done ? TextDecoration.lineThrough : null)),
+          Text('${uah(it.priceTotal)} ₴', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+            color: AppColors.green)),
         ]),
-      ),
     );
   }
 
@@ -373,20 +327,13 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _itemRow(String dept, int i, Ingredient it) {
-    final key = _key(dept, i);
-    final done = _checked.contains(key);
-    return InkWell(
-      onTap: () => setState(() => done ? _checked.remove(key) : _checked.add(key)),
-      child: Padding(
+    return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         child: Row(children: [
-          Icon(done ? Icons.check_circle : Icons.circle_outlined,
-            color: done ? AppColors.accent : AppColors.muted, size: 24),
+          const Icon(CupertinoIcons.cart, color: AppColors.accent, size: 20),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(it.name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-              color: done ? AppColors.muted : AppColors.text,
-              decoration: done ? TextDecoration.lineThrough : null)),
+            Text(it.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text)),
             const SizedBox(height: 2),
             Row(children: [
               Text('${it.qty} · ${it.store}', style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
@@ -401,12 +348,9 @@ class _CartScreenState extends State<CartScreen> {
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             if (it.onSale)
               Text('${it.oldPrice} ₴', style: const TextStyle(fontSize: 11, color: AppColors.muted, decoration: TextDecoration.lineThrough)),
-            Text('${it.price} ₴', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-              color: done ? AppColors.muted : AppColors.green,
-              decoration: done ? TextDecoration.lineThrough : null)),
+            Text('${it.price} ₴', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.green)),
           ]),
         ]),
-      ),
     );
   }
 }

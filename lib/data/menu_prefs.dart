@@ -9,6 +9,10 @@ class MenuPrefs extends ChangeNotifier {
   double budget = 2000;
   int people = 2;
 
+  /// На скільки днів складати меню (і список покупок). 1/2/3/5/7.
+  int days = 7;
+  static const dayOptions = [1, 2, 3, 5, 7];
+
   /// Режим генерації: 'economy' (ціна — акції/найдешевше) або 'quality' (склад/кращі товари).
   String mode = 'economy';
 
@@ -63,6 +67,7 @@ class MenuPrefs extends ChangeNotifier {
   /// Єдине тіло запиту генерації — для «Скласти меню» і для checkout.
   Map<String, dynamic> toRequestBody() => {
         'budget': budget.round(),
+        'days': days,
         'mode': mode,
         'budget_flex_pct': flexPct,
         'people': people,

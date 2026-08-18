@@ -71,17 +71,31 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_, _) => _BudgetCard(spent: spent, limit: MenuPrefs.instance.budget.round(), daysLeft: daysLeft),
         ),
       )),
-      // Головна дія застосунку — скласти/перескласти меню на тиждень.
+      // Вибір горизонту меню (і списку покупок): 1/2/3/5/7 днів.
+      SliverToBoxAdapter(child: AnimatedBuilder(
+        animation: MenuPrefs.instance,
+        builder: (_, _) => _DaysSelector(
+          selected: MenuPrefs.instance.days,
+          onTap: (d) { MenuPrefs.instance.days = d; MenuPrefs.instance.notify(); },
+        ),
+      )),
+      // Головна дія застосунку — скласти/перескласти меню на обрану к-сть днів.
       SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
-        child: SizedBox(width: double.infinity, child: CupertinoButton(
-          color: AppColors.accent, borderRadius: BorderRadius.circular(14),
-          onPressed: _generating ? null : _openGenerateSheet,
-          child: _generating
-              ? const CupertinoActivityIndicator(color: AppColors.accentInk)
-              : Text(PlanStore.instance.hasMenu ? 'Перескласти меню на тиждень' : 'Скласти меню на тиждень',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.accentInk)),
-        )),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+        child: AnimatedBuilder(
+          animation: MenuPrefs.instance,
+          builder: (_, _) {
+            final d = MenuPrefs.instance.days;
+            return SizedBox(width: double.infinity, child: CupertinoButton(
+              color: AppColors.accent, borderRadius: BorderRadius.circular(14),
+              onPressed: _generating ? null : _openGenerateSheet,
+              child: _generating
+                  ? const CupertinoActivityIndicator(color: AppColors.accentInk)
+                  : Text('${PlanStore.instance.hasMenu ? 'Перескласти' : 'Скласти'} меню на $d ${dayWord(d)}',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.accentInk)),
+            ));
+          },
+        ),
       )),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -132,13 +146,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openGenerateSheet() {
     final p = MenuPrefs.instance;
     final mode = p.mode == 'quality' ? 'Якість${p.flexPct > 0 ? ' +${p.flexPct}%' : ''}' : 'Ціна';
-    final summary = 'Бюджет: ${p.budget.round()} ₴/тиждень · $mode\n'
+    final summary = 'Меню на: ${p.days} ${dayWord(p.days)}\n'
+        'Бюджет: ${p.budget.round()} ₴/тиждень · $mode\n'
         'Раціон: ${p.dietSystemLabel}${p.filtersCount > 0 ? ' · ${p.filtersCount} фільтрів' : ''}\n'
         'Осіб: ${p.people}\n\nЗмінити — у Профілі.';
     showCupertinoDialog<void>(
       context: context,
       builder: (c) => CupertinoAlertDialog(
-        title: const Text('Скласти меню на тиждень'),
+        title: Text('Скласти меню на ${p.days} ${dayWord(p.days)}'),
         content: Text('\n$summary'),
         actions: [
           CupertinoDialogAction(onPressed: () => Navigator.of(c).pop(), child: const Text('Скасувати')),
@@ -193,6 +208,38 @@ class _HomeScreenState extends State<HomeScreen> {
       ));
     }
   }
+}
+
+/// Вибір горизонту меню: 1/2/3/5/7 днів (керує генерацією й списком покупок).
+class _DaysSelector extends StatelessWidget {
+  final int selected;
+  final void Function(int) onTap;
+  const _DaysSelector({required this.selected, required this.onTap});
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+    child: Row(children: [
+      const Text('Меню на:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
+      const SizedBox(width: 10),
+      for (final d in MenuPrefs.dayOptions)
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => onTap(d),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: selected == d ? AppColors.accent : AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: selected == d ? AppColors.accent : AppColors.line)),
+              child: Text('$d', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800,
+                color: selected == d ? AppColors.accentInk : AppColors.text)),
+            ),
+          ),
+        ),
+    ]),
+  );
 }
 
 class _EmptyDay extends StatelessWidget {
