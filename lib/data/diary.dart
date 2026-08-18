@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 class DiaryEntry {
   final String title;
   final int grams, kcal, protein, fat, carbs;
-  const DiaryEntry(this.title, this.grams, this.kcal, this.protein, this.fat, this.carbs);
+  final String meal; // Сніданок / Обід / Вечеря / Перекус
+  const DiaryEntry(this.title, this.grams, this.kcal, this.protein, this.fat, this.carbs,
+      {this.meal = 'Перекус'});
 }
 
 /// Щоденник харчування (демо: тільки «сьогодні», локально в памʼяті).
@@ -12,7 +14,7 @@ class DiaryEntry {
 class DiaryStore extends ChangeNotifier {
   DiaryStore._() {
     // Демо-сід: сніданок уже зʼїдено, щоб кільце не було порожнім.
-    today.add(const DiaryEntry('Вівсяна каша з бананом та медом', 250, 238, 13, 8, 29));
+    today.add(const DiaryEntry('Вівсяна каша з бананом та медом', 250, 238, 13, 8, 29, meal: 'Сніданок'));
   }
   static final DiaryStore instance = DiaryStore._();
 

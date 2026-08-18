@@ -270,7 +270,7 @@ class _RecipeScreenState extends State<RecipeScreen> {
         const SizedBox(height: 14),
         SizedBox(width: double.infinity, child: FilledButton.icon(
           onPressed: () {
-            DiaryStore.instance.add(DiaryEntry(m.title, _grams, kcal, p, f, c));
+            DiaryStore.instance.add(DiaryEntry(m.title, _grams, kcal, p, f, c, meal: m.type));
             // Подія для аналітики (fire-and-forget, не блокує UI).
             MealizeApi.instance.logFood(title: m.title, kcal: kcal, grams: _grams, protein: p, fat: f, carbs: c)
                 .catchError((_) {});

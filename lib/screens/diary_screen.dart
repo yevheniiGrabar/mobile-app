@@ -2,12 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../data/diary.dart';
+import '../widgets/nutrition_rings_card.dart';
 
-/// Щоденник харчування (сьогодні): що зʼїдено + КБЖУ, з можливістю видалити.
-/// Працює і як корінь вкладки (без «назад»), і як пуш із картки на Головній
-/// (CupertinoSliverNavigationBar сам вирішує, чи показувати кнопку «назад»).
+/// Щоденник харчування (сьогодні): кільця калорій + записи, згруповані
+/// за прийомами їжі (Сніданок / Обід / Вечеря / Перекус).
 class DiaryScreen extends StatelessWidget {
   const DiaryScreen({super.key});
+
+  /// Порядок прийомів у списку (перекуси — останні; далі зʼявляться інші).
+  static const _order = ['Сніданок', 'Обід', 'Вечеря', 'Перекус'];
 
   @override
   Widget build(BuildContext context) {
@@ -21,14 +24,14 @@ class DiaryScreen extends StatelessWidget {
           builder: (context, _) {
             final ds = DiaryStore.instance;
             return Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-              _summary(ds),
+              const NutritionRingsCard(),
               const SizedBox(height: 16),
               if (ds.today.isEmpty)
                 const Padding(padding: EdgeInsets.only(top: 40),
                   child: Center(child: Text('Ще нічого не записано.\nЗапиши порцію з екрана страви.',
                     textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted))))
               else
-                ...List.generate(ds.today.length, (i) => _entryRow(context, ds, i)),
+                ..._groupedByMeal(context, ds),
               const SizedBox(height: 90),
             ]));
           },
@@ -37,40 +40,51 @@ class DiaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _summary(DiaryStore ds) {
-    final pct = (ds.kcal / DiaryStore.goalKcal).clamp(0.0, 1.0);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, crossAxisAlignment: CrossAxisAlignment.end, children: [
-          RichText(text: TextSpan(children: [
-            TextSpan(text: '${ds.kcal} ', style: const TextStyle(color: AppColors.text, fontSize: 26, fontWeight: FontWeight.w900)),
-            TextSpan(text: '/ ${DiaryStore.goalKcal} ккал', style: const TextStyle(color: AppColors.muted, fontSize: 14, fontWeight: FontWeight.w600)),
-          ])),
-          Text('лишилось ${ds.remaining}', style: const TextStyle(fontSize: 12.5, color: AppColors.accent, fontWeight: FontWeight.w700)),
-        ]),
-        const SizedBox(height: 10),
-        ClipRRect(borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(value: pct, minHeight: 8, backgroundColor: AppColors.surface2, valueColor: const AlwaysStoppedAnimation(AppColors.accent))),
-        const SizedBox(height: 12),
-        Row(children: [
-          _macro('Білки', ds.protein, DiaryStore.goalProtein, AppColors.blue),
-          _macro('Жири', ds.fat, DiaryStore.goalFat, AppColors.amber),
-          _macro('Вуглеводи', ds.carbs, DiaryStore.goalCarbs, AppColors.carbs),
-        ]),
-      ]),
-    );
+  /// Записи, згруповані за прийомом їжі, у фіксованому порядку.
+  List<Widget> _groupedByMeal(BuildContext context, DiaryStore ds) {
+    // meal → список (оригінальний індекс, запис) для коректного видалення.
+    final groups = <String, List<(int, DiaryEntry)>>{};
+    for (var i = 0; i < ds.today.length; i++) {
+      final e = ds.today[i];
+      groups.putIfAbsent(e.meal, () => []).add((i, e));
+    }
+    // Порядок: спершу відомі прийоми, потім будь-які інші.
+    final meals = [
+      ..._order.where(groups.containsKey),
+      ...groups.keys.where((m) => !_order.contains(m)),
+    ];
+
+    final out = <Widget>[];
+    for (final meal in meals) {
+      final items = groups[meal]!;
+      final kcal = items.fold<int>(0, (s, x) => s + x.$2.kcal);
+      out.add(_mealHeader(meal, kcal));
+      for (final (idx, e) in items) {
+        out.add(_entryRow(context, ds, idx, e));
+      }
+    }
+    return out;
   }
 
-  Widget _macro(String l, int v, int g, Color c) => Expanded(child: Column(children: [
-    Text('$v / $g г', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: c)),
-    const SizedBox(height: 2),
-    Text(l, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-  ]));
+  Widget _mealHeader(String meal, int kcal) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+    child: Row(children: [
+      Icon(_mealIcon(meal), size: 16, color: AppColors.accent),
+      const SizedBox(width: 6),
+      Text(meal, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+      const Spacer(),
+      Text('$kcal ккал', style: const TextStyle(fontSize: 12.5, color: AppColors.muted, fontWeight: FontWeight.w700)),
+    ]),
+  );
 
-  Widget _entryRow(BuildContext context, DiaryStore ds, int i) {
-    final e = ds.today[i];
+  IconData _mealIcon(String meal) => switch (meal) {
+    'Сніданок' => Icons.wb_sunny_outlined,
+    'Обід' => Icons.restaurant,
+    'Вечеря' => Icons.nightlight_outlined,
+    _ => Icons.cookie_outlined, // перекус
+  };
+
+  Widget _entryRow(BuildContext context, DiaryStore ds, int i, DiaryEntry e) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
