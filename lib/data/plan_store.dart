@@ -9,11 +9,12 @@ class PlanItem {
   final double price, priceTotal, saved; // ₴ з копійками
   final double? oldPrice;
   final int? packSize, leftover;
-  final String? reason;
-  final bool isPromo, isPrivateLabel;
+  final String? reason, image, swapSku;
+  final bool isPromo, isPrivateLabel, available;
   const PlanItem(this.id, this.ingredient, this.title, this.sku, this.qty,
       this.price, this.priceTotal, this.isPromo, this.isPrivateLabel,
-      {this.oldPrice, this.saved = 0, this.packSize, this.leftover, this.reason});
+      {this.oldPrice, this.saved = 0, this.packSize, this.leftover, this.reason,
+       this.image, this.swapSku, this.available = true});
 
   factory PlanItem.fromJson(Map<String, dynamic> j) => PlanItem(
         (j['id'] ?? 0) as int,
@@ -30,6 +31,9 @@ class PlanItem {
         packSize: (j['pack_size'] as num?)?.toInt(),
         leftover: (j['leftover'] as num?)?.toInt(),
         reason: (j['reason'] as String?),
+        image: (j['image'] as String?),
+        swapSku: (j['swap_sku'] as String?),
+        available: j['available'] != false,
       );
 }
 

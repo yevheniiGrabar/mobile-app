@@ -250,32 +250,85 @@ class _CartScreenState extends State<CartScreen> {
 
   Widget _planItemRow(int i, PlanItem it) {
     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         child: Row(children: [
-          const Icon(CupertinoIcons.cart, color: AppColors.accent, size: 20),
-          const SizedBox(width: 12),
+          _thumb(it),
+          const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(it.title.isEmpty ? it.ingredient : it.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.text)),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                color: it.available ? AppColors.text : AppColors.muted)),
             const SizedBox(height: 2),
             Row(children: [
-              Text('для: ${it.ingredient}', style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
+              Flexible(child: Text('для: ${it.ingredient}', maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11.5, color: AppColors.muted))),
               if (it.qty > 1) ...[
                 const SizedBox(width: 6),
                 Text('×${it.qty} уп.', style: const TextStyle(fontSize: 11.5, color: AppColors.text, fontWeight: FontWeight.w700)),
               ],
             ]),
-            if (it.reason != null && it.reason!.isNotEmpty) ...[
+            if (!it.available) ...[
+              const SizedBox(height: 3),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(color: AppColors.amber.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                child: const Text('⏳ Очікується — заміни', style: TextStyle(fontSize: 10, color: AppColors.amber, fontWeight: FontWeight.w700))),
+            ] else if (it.reason != null && it.reason!.isNotEmpty) ...[
               const SizedBox(height: 3),
               Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(color: AppColors.accentSoft, borderRadius: BorderRadius.circular(6)),
                 child: Text('💡 ${it.reason}', style: const TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.w700))),
             ],
           ])),
-          Text('${uah(it.priceTotal)} ₴', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-            color: AppColors.green)),
+          const SizedBox(width: 8),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('${uah(it.priceTotal)} ₴', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.green)),
+            if (it.swapSku != null) ...[
+              const SizedBox(height: 6),
+              _swapButton(it),
+            ],
+          ]),
         ]),
     );
+  }
+
+  /// Мініатюра товару (фото Сільпо); якщо немає — іконка кошика.
+  Widget _thumb(PlanItem it) => ClipRRect(
+    borderRadius: BorderRadius.circular(10),
+    child: Container(
+      width: 46, height: 46, color: AppColors.surface2,
+      child: it.image != null && it.image!.isNotEmpty
+          ? Image.network(it.image!, fit: BoxFit.cover, gaplessPlayback: true,
+              errorBuilder: (_, _, _) => const Icon(CupertinoIcons.cart, color: AppColors.muted, size: 20))
+          : const Icon(CupertinoIcons.cart, color: AppColors.muted, size: 20),
+    ),
+  );
+
+  /// Кругла кнопка «замінити» — свап на кращу альтернативу.
+  Widget _swapButton(PlanItem it) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: _busy ? null : () => _swapItem(it),
+    child: Container(
+      width: 30, height: 30,
+      decoration: BoxDecoration(
+        color: it.available ? AppColors.surface : AppColors.amber.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+        border: Border.all(color: it.available ? AppColors.line : AppColors.amber)),
+      child: Icon(CupertinoIcons.arrow_2_circlepath, size: 16,
+        color: it.available ? AppColors.accent : AppColors.amber),
+    ),
+  );
+
+  Future<void> _swapItem(PlanItem it) async {
+    if (it.swapSku == null) return;
+    setState(() => _busy = true);
+    try {
+      final json = await _api.swap(PlanStore.instance.id!, it.id, it.swapSku!);
+      final data = json['data'] as Map<String, dynamic>?;
+      if (data != null) PlanStore.instance.setFromPlan(data);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   /// Доказова економія: сума + % + порівняння двох кошиків.
