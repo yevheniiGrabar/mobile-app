@@ -5,8 +5,10 @@ import '../models.dart';
 class PlanItem {
   final int id;
   final String ingredient, title, sku;
-  final int qty, price, priceTotal, saved;
-  final int? oldPrice, packSize, leftover;
+  final int qty;
+  final double price, priceTotal, saved; // ₴ з копійками
+  final double? oldPrice;
+  final int? packSize, leftover;
   final String? reason;
   final bool isPromo, isPrivateLabel;
   const PlanItem(this.id, this.ingredient, this.title, this.sku, this.qty,
@@ -19,12 +21,12 @@ class PlanItem {
         (j['title'] ?? '').toString(),
         (j['sku'] ?? '').toString(),
         (j['qty'] ?? 1) as int,
-        (j['price'] ?? 0) as int,
-        (j['price_total'] ?? j['price'] ?? 0) as int,
+        (j['price'] as num?)?.toDouble() ?? 0,
+        (j['price_total'] as num?)?.toDouble() ?? (j['price'] as num?)?.toDouble() ?? 0,
         j['is_promo'] == true,
         j['is_private_label'] == true,
-        oldPrice: (j['old_price'] as num?)?.toInt(),
-        saved: (j['saved'] as num?)?.toInt() ?? 0,
+        oldPrice: (j['old_price'] as num?)?.toDouble(),
+        saved: (j['saved'] as num?)?.toDouble() ?? 0,
         packSize: (j['pack_size'] as num?)?.toInt(),
         leftover: (j['leftover'] as num?)?.toInt(),
         reason: (j['reason'] as String?),
@@ -38,7 +40,7 @@ class PlanStore extends ChangeNotifier {
   static final PlanStore instance = PlanStore._();
 
   int? id;
-  int? naiveTotal, optimizedTotal, savings;
+  double? naiveTotal, optimizedTotal, savings; // ₴ з копійками
   int shoppingDays = 7; // горизонт списку покупок (днів)
   List<PlanItem> items = [];
   List<DayMenu> days = []; // згенероване меню на тиждень (для карток на Головній)
@@ -49,9 +51,9 @@ class PlanStore extends ChangeNotifier {
   /// Заповнити з відповіді GET /api/meal-plans/{id} (data: MealPlanResource).
   void setFromPlan(Map<String, dynamic> data) {
     id = data['id'] as int?;
-    naiveTotal = data['naive_total'] as int?;
-    optimizedTotal = data['optimized_total'] as int?;
-    savings = data['savings'] as int?;
+    naiveTotal = (data['naive_total'] as num?)?.toDouble();
+    optimizedTotal = (data['optimized_total'] as num?)?.toDouble();
+    savings = (data['savings'] as num?)?.toDouble();
     shoppingDays = (data['shopping_days'] as num?)?.toInt() ?? 7;
     items = ((data['items'] as List?) ?? const [])
         .map((e) => PlanItem.fromJson((e as Map).cast<String, dynamic>()))
