@@ -5,6 +5,8 @@ import 'app_mark.dart';
 import '../screens/recipes_screen.dart';
 import '../screens/analytics_screen.dart';
 import '../screens/diary_screen.dart';
+import '../screens/calorie_goal_screen.dart';
+import '../screens/family_screen.dart';
 import '../screens/subscription_screen.dart';
 
 /// Бічне меню (зліва, кнопка «три смужки» на Головній).
@@ -21,6 +23,7 @@ class AppMenuDrawer extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _header(),
           Expanded(child: ListView(padding: const EdgeInsets.only(top: 4, bottom: 24), children: [
+            _accountRow(context),
             _section('КАТАЛОГ'),
             _item(context, Icons.menu_book_outlined, 'Рецепти', 'усі страви',
                 () => const RecipesScreen()),
@@ -30,9 +33,16 @@ class AppMenuDrawer extends StatelessWidget {
                 () => const DiaryScreen()),
             _item(context, Icons.insights_outlined, 'Аналітика', 'витрати · економія · калорії',
                 () => const AnalyticsScreen()),
+            _item(context, Icons.track_changes, 'Цілі калорій', 'денна норма',
+                () => const CalorieGoalScreen()),
             _item(context, Icons.auto_awesome_outlined, 'Історія меню', 'минулі плани', null),
+            _section('ЗАМОВЛЕННЯ'),
+            _item(context, Icons.location_on_outlined, 'Адреси доставки', '', null),
+            _item(context, Icons.credit_card, 'Спосіб оплати', 'Apple Pay', null),
+            _item(context, Icons.history, 'Історія замовлень', '', null),
             _section('КОРИСНЕ'),
             _proItem(context),
+            _item(context, Icons.notifications_none, 'Сповіщення', '', null),
             _item(context, Icons.new_releases_outlined, 'Що нового', '', null),
             _item(context, Icons.help_outline, 'Підтримка', '', null),
             _item(context, Icons.info_outline, 'Про застосунок', 'v1.0', null),
@@ -52,6 +62,35 @@ class AppMenuDrawer extends StatelessWidget {
             Text('Розумна тарілка', style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
           ])),
         ]),
+      );
+
+  /// Акаунт (перенесено з колишнього Профілю) → склад сім'ї.
+  Widget _accountRow(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FamilyScreen()));
+          },
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
+            child: Row(children: [
+              Container(width: 44, height: 44,
+                decoration: const BoxDecoration(shape: BoxShape.circle,
+                  gradient: RadialGradient(center: Alignment(-0.3, -0.3), radius: 0.9, colors: [Color(0xFF4FD08A), AppColors.accent])),
+                child: const Icon(Icons.person, color: Colors.white, size: 24)),
+              const SizedBox(width: 12),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Євгеній Грабар', style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800)),
+                SizedBox(height: 2),
+                Text('Склад сім\'ї', style: TextStyle(fontSize: 12.5, color: AppColors.muted)),
+              ])),
+              const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.muted),
+            ]),
+          ),
+        ),
       );
 
   Widget _section(String t) => Padding(

@@ -4,7 +4,7 @@ import 'theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/diary_screen.dart';
 import 'screens/cart_screen.dart';
-import 'screens/profile_screen.dart';
+import 'screens/budget_tab_screen.dart';
 import 'widgets/assistant_sheet.dart';
 import 'widgets/app_menu_drawer.dart';
 import 'widgets/app_mark.dart';
@@ -17,7 +17,12 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int index = 0;
-  final pages = const [HomeScreen(), DiaryScreen(), CartScreen(), ProfileScreen()];
+  late final pages = [
+    const HomeScreen(),
+    const DiaryScreen(),
+    const CartScreen(),
+    BudgetTabScreen(onGenerated: () => setState(() => index = 0)), // після генерації → Головна
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +68,7 @@ class _MainShellState extends State<MainShell> {
               _tab(CupertinoIcons.book_fill, 'Щоденник', 1),
               _zoryanaTab(),
               _tab(CupertinoIcons.list_bullet, 'Список', 2),
-              _tab(CupertinoIcons.person_fill, 'Профіль', 3),
+              _tab(CupertinoIcons.money_dollar_circle_fill, 'Бюджет', 3),
             ]),
           ),
         ),

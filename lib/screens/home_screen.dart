@@ -6,7 +6,6 @@ import '../models.dart';
 import '../data/diary.dart';
 import '../data/menu_prefs.dart';
 import '../data/plan_store.dart';
-import '../data/api/mealize_api.dart';
 import '../widgets/meal_card.dart';
 import '../format.dart';
 import 'diary_screen.dart';
@@ -23,7 +22,6 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _dates = [23, 24, 25, 26, 27, 28, 29];
   static const _todayIndex = 0; // сьогодні = Понеділок (демо-дані)
   int _selected = 0;
-  bool _generating = false;
 
   @override
   void initState() {
@@ -71,32 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (_, _) => _BudgetCard(spent: spent, limit: MenuPrefs.instance.budget.round(), daysLeft: daysLeft),
         ),
       )),
-      // Вибір горизонту меню (і списку покупок): 1/2/3/5/7 днів.
-      SliverToBoxAdapter(child: AnimatedBuilder(
-        animation: MenuPrefs.instance,
-        builder: (_, _) => _DaysSelector(
-          selected: MenuPrefs.instance.days,
-          onTap: (d) { MenuPrefs.instance.days = d; MenuPrefs.instance.notify(); },
-        ),
-      )),
-      // Головна дія застосунку — скласти/перескласти меню на обрану к-сть днів.
-      SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
-        child: AnimatedBuilder(
-          animation: MenuPrefs.instance,
-          builder: (_, _) {
-            final d = MenuPrefs.instance.days;
-            return SizedBox(width: double.infinity, child: CupertinoButton(
-              color: AppColors.accent, borderRadius: BorderRadius.circular(14),
-              onPressed: _generating ? null : _openGenerateSheet,
-              child: _generating
-                  ? const CupertinoActivityIndicator(color: AppColors.accentInk)
-                  : Text('${PlanStore.instance.hasMenu ? 'Перескласти' : 'Скласти'} меню на $d ${dayWord(d)}',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.accentInk)),
-            ));
-          },
-        ),
-      )),
       SliverToBoxAdapter(child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
         child: AnimatedBuilder(
@@ -141,105 +113,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _dayNameFull(int i) => const ['Понеділок','Вівторок','Середа','Четвер','П\'ятниця','Субота','Неділя'][i.clamp(0, 6)];
-
-  /// Сводка налаштувань + підтвердження перед генерацією (нативний Cupertino-діалог).
-  void _openGenerateSheet() {
-    final p = MenuPrefs.instance;
-    final mode = p.mode == 'quality' ? 'Якість${p.flexPct > 0 ? ' +${p.flexPct}%' : ''}' : 'Ціна';
-    final summary = 'Меню на: ${p.days} ${dayWord(p.days)}\n'
-        'Бюджет: ${p.budget.round()} ₴/тиждень · $mode\n'
-        'Раціон: ${p.dietSystemLabel}${p.filtersCount > 0 ? ' · ${p.filtersCount} фільтрів' : ''}\n'
-        'Осіб: ${p.people}\n\nЗмінити — у Профілі.';
-    showCupertinoDialog<void>(
-      context: context,
-      builder: (c) => CupertinoAlertDialog(
-        title: Text('Скласти меню на ${p.days} ${dayWord(p.days)}'),
-        content: Text('\n$summary'),
-        actions: [
-          CupertinoDialogAction(onPressed: () => Navigator.of(c).pop(), child: const Text('Скасувати')),
-          CupertinoDialogAction(isDefaultAction: true,
-            onPressed: () { Navigator.of(c).pop(); _generate(); }, child: const Text('Скласти')),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _generate() async {
-    setState(() => _generating = true);
-    String title = 'Готово';
-    String msg = '';
-    try {
-      final result = await MealizeApi.instance.generateAndWait(MenuPrefs.instance.toRequestBody());
-      final data = result['data'] as Map<String, dynamic>?;
-      final status = data?['status'];
-      if (status == 'ready') {
-        PlanStore.instance.setFromPlan(data!);
-        final total = (data['optimized_total'] as num?)?.toInt() ?? 0;
-        final budget = MenuPrefs.instance.budget.round();
-        final within = total <= budget;
-        title = 'Меню готове 🎉';
-        msg = within
-            ? 'Кошик на тиждень: $total ₴ — у межах бюджету ($budget ₴).\nДеталі — у вкладці «Список».'
-            : 'Кошик на тиждень: $total ₴ — це більше за бюджет ($budget ₴).\nЗбав кількість днів у «Список» або підніми бюджет у Профілі.';
-      } else if (status == 'generating' || status == 'pending') {
-        // Ще не дозріло за час полінгу — не помилка.
-        title = 'Ще готуємо';
-        msg = 'Меню генерується довше звичайного. Воно зʼявиться саме за хвилину — можеш поки погортати застосунок.';
-      } else {
-        final err = (data?['error'] ?? '').toString();
-        title = 'Не вдалося';
-        msg = err.contains('401')
-            ? 'Спочатку підключи Сільпо: Профіль → «Підключити Сільпо».'
-            : 'Помилка генерації: ${err.isEmpty ? "невідома" : err}';
-      }
-    } on ApiException catch (e) {
-      title = 'Не вдалося';
-      msg = 'Бекенд: ${e.message}';
-    } catch (_) {
-      title = 'Бекенд недоступний';
-      msg = 'Сервер не відповідає. Запусти BFF і спробуй ще раз.';
-    } finally {
-      if (mounted) setState(() => _generating = false);
-    }
-    if (mounted) {
-      showCupertinoDialog<void>(context: context, builder: (c) => CupertinoAlertDialog(
-        title: Text(title), content: Text('\n$msg'),
-        actions: [CupertinoDialogAction(isDefaultAction: true, onPressed: () => Navigator.of(c).pop(), child: const Text('OK'))],
-      ));
-    }
-  }
-}
-
-/// Вибір горизонту меню: 1/2/3/5/7 днів (керує генерацією й списком покупок).
-class _DaysSelector extends StatelessWidget {
-  final int selected;
-  final void Function(int) onTap;
-  const _DaysSelector({required this.selected, required this.onTap});
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-    child: Row(children: [
-      const Text('Меню на:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted)),
-      const SizedBox(width: 10),
-      for (final d in MenuPrefs.dayOptions)
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onTap(d),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: selected == d ? AppColors.accent : AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: selected == d ? AppColors.accent : AppColors.line)),
-              child: Text('$d', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800,
-                color: selected == d ? AppColors.accentInk : AppColors.text)),
-            ),
-          ),
-        ),
-    ]),
-  );
 }
 
 class _EmptyDay extends StatelessWidget {
