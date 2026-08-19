@@ -12,7 +12,10 @@ import '../screens/subscription_screen.dart';
 /// Бічне меню (зліва, кнопка «три смужки» на Головній).
 /// Каталог + трекінг + корисне — усе, що не є основними вкладками таб-бару.
 class AppMenuDrawer extends StatelessWidget {
-  const AppMenuDrawer({super.key});
+  const AppMenuDrawer({super.key, this.onReplayTour});
+
+  /// Повторно показати онбординг-тур (перемикає на Головну й запускає гайд).
+  final VoidCallback? onReplayTour;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +45,13 @@ class AppMenuDrawer extends StatelessWidget {
             _item(context, Icons.history, 'Історія замовлень', '', null),
             _section('КОРИСНЕ'),
             _proItem(context),
+            ListTile(
+              leading: const Icon(Icons.school_outlined, color: AppColors.text, size: 22),
+              title: const Text('Як це працює', style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600)),
+              subtitle: const Text('пройти гайд', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+              trailing: const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.muted),
+              onTap: () { Navigator.of(context).pop(); onReplayTour?.call(); },
+            ),
             _item(context, Icons.notifications_none, 'Сповіщення', '', null),
             _item(context, Icons.new_releases_outlined, 'Що нового', '', null),
             _item(context, Icons.help_outline, 'Підтримка', '', null),

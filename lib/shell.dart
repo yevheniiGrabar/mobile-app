@@ -8,6 +8,7 @@ import 'screens/budget_tab_screen.dart';
 import 'widgets/assistant_sheet.dart';
 import 'widgets/app_menu_drawer.dart';
 import 'widgets/app_mark.dart';
+import 'onboarding/tour.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -25,10 +26,23 @@ class _MainShellState extends State<MainShell> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Онбординг при першому запуску (після першого кадру, коли таргети змонтовані).
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) Tour.maybeShow(context); });
+  }
+
+  /// Повтор туру зі шторки: перемкнутися на Головну й показати гайд.
+  void _replayTour() {
+    setState(() => index = 0);
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) Tour.show(context); });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      drawer: const AppMenuDrawer(),
+      drawer: AppMenuDrawer(onReplayTour: _replayTour),
       body: Column(children: [
         // Глобальна шапка: зліва «три смужки» (меню), справа значок → на Головну.
         Builder(builder: (ctx) => SafeArea(bottom: false, child: Padding(
@@ -65,10 +79,10 @@ class _MainShellState extends State<MainShell> {
             height: 52,
             child: Row(children: [
               _tab(CupertinoIcons.house_fill, 'Головна', 0),
-              _tab(CupertinoIcons.book_fill, 'Щоденник', 1),
+              _tab(CupertinoIcons.book_fill, 'Щоденник', 1, tabKey: Tour.tabDiary),
               _zoryanaTab(),
-              _tab(CupertinoIcons.list_bullet, 'Список', 2),
-              _tab(CupertinoIcons.money_dollar_circle_fill, 'Бюджет', 3),
+              _tab(CupertinoIcons.list_bullet, 'Список', 2, tabKey: Tour.tabList),
+              _tab(CupertinoIcons.money_dollar_circle_fill, 'Бюджет', 3, tabKey: Tour.tabBudget),
             ]),
           ),
         ),
@@ -76,10 +90,11 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _tab(IconData icon, String label, int i) {
+  Widget _tab(IconData icon, String label, int i, {Key? tabKey}) {
     final color = index == i ? AppColors.accent : AppColors.muted;
     return Expanded(
       child: GestureDetector(
+        key: tabKey,
         behavior: HitTestBehavior.opaque,
         onTap: () => setState(() => index = i),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -95,6 +110,7 @@ class _MainShellState extends State<MainShell> {
   Widget _zoryanaTab() {
     return Expanded(
       child: GestureDetector(
+        key: Tour.tabZoryana,
         behavior: HitTestBehavior.opaque,
         onTap: () => showAssistant(context),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

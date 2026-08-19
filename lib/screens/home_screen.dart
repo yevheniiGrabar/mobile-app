@@ -6,6 +6,7 @@ import '../data/menu_prefs.dart';
 import '../data/plan_store.dart';
 import '../widgets/meal_card.dart';
 import '../format.dart';
+import '../onboarding/tour.dart';
 
 /// Головна (Stitch): бюджет → КБЖУ → «Цей тиждень» → «Меню на сьогодні».
 class HomeScreen extends StatefulWidget {
@@ -52,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: CustomScrollView(slivers: [
       // Календар тижня (мінімал: пігулка на вибраному дні) — над бюджетом.
       SliverToBoxAdapter(child: Padding(
+        key: Tour.calendar,
         padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
         child: _WeekStrip(
           days: _days, dates: _dates, selected: _selected, today: _todayIndex,
@@ -60,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       )),
       SliverToBoxAdapter(child: Padding(
+        key: Tour.budget,
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
         child: AnimatedBuilder(
           animation: MenuPrefs.instance,
@@ -85,7 +88,9 @@ class _HomeScreenState extends State<HomeScreen> {
       else
         SliverList(delegate: SliverChildBuilderDelegate((c, i) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: MealCard(meal: d.meals[i]),
+          child: i == 0
+              ? KeyedSubtree(key: Tour.mealCard, child: MealCard(meal: d.meals[i]))
+              : MealCard(meal: d.meals[i]),
         ), childCount: d.meals.length)),
       const SliverToBoxAdapter(child: SizedBox(height: 100)),
     ]));
